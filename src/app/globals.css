@@ -176,3 +176,117 @@
 .simple-wave {
   animation: simple-wave 2s ease-in-out infinite;
 }
+
+/* Shipwreck on ocean floor */
+.shipwreck {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  height: 120px;
+  opacity: 0.15;
+  z-index: 1;
+}
+
+.shipwreck::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(
+    to top,
+    rgba(139, 69, 19, 0.8) 0%,
+    rgba(160, 82, 45, 0.6) 30%,
+    rgba(139, 69, 19, 0.4) 60%,
+    transparent 100%
+  );
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  animation: shipwreck-sway 8s ease-in-out infinite;
+}
+
+.shipwreck::after {
+  content: "";
+  position: absolute;
+  bottom: 45px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 40px;
+  background: linear-gradient(
+    to top,
+    rgba(139, 69, 19, 0.9) 0%,
+    rgba(160, 82, 45, 0.7) 50%,
+    transparent 100%
+  );
+  border-radius: 4px 4px 0 0;
+  animation: shipwreck-sway 8s ease-in-out infinite;
+}
+
+@keyframes shipwreck-sway {
+  0%,
+  100% {
+    transform: rotate(-1deg);
+  }
+  50% {
+    transform: rotate(1deg);
+  }
+}
+
+/* Ocean floor sand */
+.ocean-floor {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(
+    to top,
+    rgba(194, 154, 108, 0.3) 0%,
+    rgba(218, 165, 32, 0.2) 50%,
+    transparent 100%
+  );
+  z-index: 0;
+}
+
+.ocean-floor::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(194, 154, 108, 0.1) 0px,
+    rgba(218, 165, 32, 0.15) 10px,
+    rgba(194, 154, 108, 0.1) 20px
+  );
+}
+/* Treasure glints around shipwreck */
+.treasure-glint {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: radial-gradient(
+    circle,
+    rgba(250, 204, 21, 0.8) 0%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  animation: treasure-glint 3s ease-in-out infinite;
+}
+
+@keyframes treasure-glint {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}

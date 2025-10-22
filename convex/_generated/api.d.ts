@@ -8,7 +8,15 @@
  * @module
  */
 
+import type * as artifactGame from "../artifactGame.js";
+import type * as artifacts from "../artifacts.js";
 import type * as challenges from "../challenges.js";
+import type * as excavationGame from "../excavationGame.js";
+import type * as excavationSites from "../excavationSites.js";
+import type * as gameEngine from "../gameEngine.js";
+import type * as gameSessions from "../gameSessions.js";
+import type * as seedArtifacts from "../seedArtifacts.js";
+import type * as seedExcavationSites from "../seedExcavationSites.js";
 import type * as users from "../users.js";
 
 import type {
@@ -26,7 +34,15 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  artifactGame: typeof artifactGame;
+  artifacts: typeof artifacts;
   challenges: typeof challenges;
+  excavationGame: typeof excavationGame;
+  excavationSites: typeof excavationSites;
+  gameEngine: typeof gameEngine;
+  gameSessions: typeof gameSessions;
+  seedArtifacts: typeof seedArtifacts;
+  seedExcavationSites: typeof seedExcavationSites;
   users: typeof users;
 }>;
 declare const fullApiWithMounts: typeof fullApi;

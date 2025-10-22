@@ -1,4 +1,4 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 
 export const createUser = mutation({
@@ -65,6 +65,44 @@ export const getCurrentUser = query({
   },
 });
 
+/**
+ * Get user by Clerk ID (alias for getCurrentUser for compatibility)
+ */
+export const getUserByClerkId = query({
+  args: {
+    clerkId: v.string(),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("users"),
+      _creationTime: v.number(),
+      clerkId: v.string(),
+      email: v.string(),
+      name: v.string(),
+      age: v.optional(v.number()),
+      school: v.optional(v.string()),
+      certificationLevel: v.union(
+        v.literal("beginner"),
+        v.literal("intermediate"),
+        v.literal("advanced"),
+        v.literal("certified")
+      ),
+      completedChallenges: v.array(v.id("challenges")),
+      totalPoints: v.number(),
+      createdAt: v.number(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    return user || null;
+  },
+});
+
 export const updateUserProgress = mutation({
   args: {
     userId: v.id("users"),
@@ -77,7 +115,9 @@ export const updateUserProgress = mutation({
     if (!user) throw new Error("User not found");
 
     // Add challenge to completed list if not already there
-    const completedChallenges = user.completedChallenges.includes(args.challengeId)
+    const completedChallenges = user.completedChallenges.includes(
+      args.challengeId
+    )
       ? user.completedChallenges
       : [...user.completedChallenges, args.challengeId];
 
@@ -93,9 +133,15 @@ export const updateUserProgress = mutation({
 
     if (newTotalPoints >= 1000 && user.certificationLevel === "beginner") {
       newLevel = "intermediate";
-    } else if (newTotalPoints >= 2500 && user.certificationLevel === "intermediate") {
+    } else if (
+      newTotalPoints >= 2500 &&
+      user.certificationLevel === "intermediate"
+    ) {
       newLevel = "advanced";
-    } else if (newTotalPoints >= 5000 && user.certificationLevel === "advanced") {
+    } else if (
+      newTotalPoints >= 5000 &&
+      user.certificationLevel === "advanced"
+    ) {
       newLevel = "certified";
     }
 
@@ -106,5 +152,29 @@ export const updateUserProgress = mutation({
     }
 
     return null;
+  },
+});
+
+// Internal function for testing purposes
+export const create = internalMutation({
+  args: {
+    clerkId: v.string(),
+    email: v.string(),
+    name: v.string(),
+    age: v.optional(v.number()),
+    school: v.optional(v.string()),
+    certificationLevel: v.union(
+      v.literal("beginner"),
+      v.literal("intermediate"),
+      v.literal("advanced"),
+      v.literal("certified")
+    ),
+    completedChallenges: v.array(v.id("challenges")),
+    totalPoints: v.number(),
+    createdAt: v.number(),
+  },
+  returns: v.id("users"),
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("users", args);
   },
 });

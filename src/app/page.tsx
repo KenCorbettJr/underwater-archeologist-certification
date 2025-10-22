@@ -1,9 +1,23 @@
-import { SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+"use client";
+
+import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function HomePage() {
+  const { isSignedIn, user } = useUser();
+
   return (
-    <div className="min-h-screen wave-bg relative overflow-hidden font-poppins">
+    <div
+      className="min-h-screen wave-bg relative overflow-hidden font-poppins"
+      style={{
+        backgroundImage: `linear-gradient(rgba(0, 50, 100, 0.7), rgba(0, 30, 60, 0.8)), url('/images/Gemini_Generated_Image_rzojr4rzojr4rzoj.png')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundAttachment: "fixed",
+      }}
+    >
       {/* Enhanced animated bubbles */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="bubble w-4 h-4 animate-pulse"></div>
@@ -42,6 +56,26 @@ export default function HomePage() {
         <div className="absolute top-1/6 right-1/2 text-sm opacity-40 animate-ping">
           ✨
         </div>
+
+        {/* Additional sea life near the bottom for shipwreck atmosphere */}
+        <div
+          className="absolute bottom-1/6 left-1/5 text-lg opacity-25 animate-pulse"
+          style={{ animationDelay: "4s" }}
+        >
+          🦀
+        </div>
+        <div
+          className="absolute bottom-1/5 right-1/5 text-sm opacity-20 animate-bounce"
+          style={{ animationDelay: "1.5s" }}
+        >
+          🐟
+        </div>
+        <div
+          className="absolute bottom-1/4 left-3/4 text-base opacity-15 animate-pulse"
+          style={{ animationDelay: "3.5s" }}
+        >
+          🌿
+        </div>
       </div>
 
       {/* Floating particles */}
@@ -76,7 +110,7 @@ export default function HomePage() {
             <span className="animate-pulse">🎓</span>
             <span>Learn • Explore • Certify</span>
           </div>
-          <UserButton afterSignOutUrl="/" />
+          <UserButton />
         </div>
       </header>
 
@@ -132,24 +166,49 @@ export default function HomePage() {
 
           {/* Enhanced CTA buttons */}
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
-            <SignUpButton mode="modal">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-sand-400 to-sand-500 hover:from-sand-500 hover:to-sand-600 text-sand-900 font-bold px-10 py-5 text-lg rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300"
-              >
-                🚀 Start Your Journey
-              </Button>
-            </SignUpButton>
+            {isSignedIn ? (
+              // Show dashboard/challenges button for signed-in users
+              <>
+                <Link href="/challenges">
+                  <Button
+                    size="lg"
+                    className="bg-gradient-to-r from-sand-400 to-sand-500 hover:from-sand-500 hover:to-sand-600 text-sand-900 font-bold px-10 py-5 text-lg rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300"
+                  >
+                    🚀 Continue Your Journey
+                  </Button>
+                </Link>
+                <div className="text-ocean-100 text-center">
+                  <p className="text-lg">
+                    Welcome back, {user?.firstName || "Explorer"}! 🌊
+                  </p>
+                  <p className="text-sm opacity-80">
+                    Ready to dive deeper into underwater archaeology?
+                  </p>
+                </div>
+              </>
+            ) : (
+              // Show sign up/in buttons for non-authenticated users
+              <>
+                <SignUpButton mode="modal">
+                  <Button
+                    size="lg"
+                    className="bg-gradient-to-r from-sand-400 to-sand-500 hover:from-sand-500 hover:to-sand-600 text-sand-900 font-bold px-10 py-5 text-lg rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300"
+                  >
+                    🚀 Start Your Journey
+                  </Button>
+                </SignUpButton>
 
-            <SignInButton mode="modal">
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-2 border-white text-white hover:bg-white hover:text-ocean-700 px-10 py-5 text-lg rounded-full backdrop-blur-sm bg-white/10 shadow-xl transform hover:scale-105 transition-all duration-300"
-              >
-                📚 Continue Learning
-              </Button>
-            </SignInButton>
+                <SignInButton mode="modal">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="border-2 border-white text-white hover:bg-white hover:text-ocean-700 px-10 py-5 text-lg rounded-full backdrop-blur-sm bg-white/10 shadow-xl transform hover:scale-105 transition-all duration-300"
+                  >
+                    📚 Continue Learning
+                  </Button>
+                </SignInButton>
+              </>
+            )}
           </div>
         </div>
 
@@ -280,10 +339,19 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Underwater scene decoration */}
+        {/* Underwater scene decoration with shipwreck */}
         <div className="mt-32 relative">
+          {/* Ocean floor */}
+          <div className="ocean-floor"></div>
+
+          {/* Shipwreck silhouette */}
+          <div className="shipwreck"></div>
+
+          {/* Gradient overlay */}
           <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-ocean-900/50 to-transparent"></div>
-          <div className="flex justify-center items-end gap-8 text-4xl md:text-6xl opacity-30">
+
+          {/* Sea life and decorations */}
+          <div className="flex justify-center items-end gap-8 text-4xl md:text-6xl opacity-30 relative z-10">
             <div className="animate-pulse">🌿</div>
             <div className="animate-ping">💎</div>
             <div className="animate-pulse" style={{ animationDelay: "1s" }}>
@@ -296,9 +364,43 @@ export default function HomePage() {
               🌿
             </div>
           </div>
+
+          {/* Swimming fish */}
           <div className="absolute bottom-16 left-0 text-2xl opacity-40 animate-bounce">
             🐠🐠🐠
           </div>
+
+          {/* Additional shipwreck details */}
+          <div
+            className="absolute bottom-8 left-1/3 text-lg opacity-20 animate-pulse"
+            style={{ animationDelay: "3s" }}
+          >
+            ⚓
+          </div>
+          <div
+            className="absolute bottom-12 right-1/3 text-sm opacity-15 animate-bounce"
+            style={{ animationDelay: "2.5s" }}
+          >
+            🏺
+          </div>
+
+          {/* Treasure glints around shipwreck */}
+          <div
+            className="treasure-glint bottom-6 left-[45%]"
+            style={{ animationDelay: "0s" }}
+          ></div>
+          <div
+            className="treasure-glint bottom-10 left-[55%]"
+            style={{ animationDelay: "1s" }}
+          ></div>
+          <div
+            className="treasure-glint bottom-4 left-[48%]"
+            style={{ animationDelay: "2s" }}
+          ></div>
+          <div
+            className="treasure-glint bottom-8 left-[52%]"
+            style={{ animationDelay: "0.5s" }}
+          ></div>
         </div>
       </main>
 
