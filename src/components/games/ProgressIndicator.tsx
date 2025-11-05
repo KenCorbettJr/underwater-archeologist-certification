@@ -1,7 +1,7 @@
 "use client";
 
-import React from 'react';
-import { ExcavationGameData, SiteArtifact } from '../../types';
+import React from "react";
+import { ExcavationGameData, SiteArtifact } from "../../types";
 
 interface ProgressIndicatorProps {
   gameData: ExcavationGameData;
@@ -14,21 +14,29 @@ export default function ProgressIndicator({
   gameData,
   siteArtifacts,
   siteName,
-  timeLimit
+  timeLimit,
 }: ProgressIndicatorProps) {
-  
   // Calculate progress metrics
   const totalCells = gameData.excavatedCells.length;
-  const excavatedCells = gameData.excavatedCells.filter(cell => cell.excavated).length;
-  const excavationProgress = totalCells > 0 ? (excavatedCells / totalCells) * 100 : 0;
+  const excavatedCells = gameData.excavatedCells.filter(
+    (cell) => cell.excavated
+  ).length;
+  const excavationProgress =
+    totalCells > 0 ? (excavatedCells / totalCells) * 100 : 0;
 
   const totalArtifacts = siteArtifacts.length;
   const discoveredArtifacts = gameData.discoveredArtifacts.length;
-  const artifactProgress = totalArtifacts > 0 ? (discoveredArtifacts / totalArtifacts) * 100 : 0;
+  const artifactProgress =
+    totalArtifacts > 0 ? (discoveredArtifacts / totalArtifacts) * 100 : 0;
 
-  const requiredDocs = gameData.documentationEntries.filter(e => e.isRequired);
-  const completedDocs = requiredDocs.filter(e => e.isComplete);
-  const documentationProgress = requiredDocs.length > 0 ? (completedDocs.length / requiredDocs.length) * 100 : 0;
+  const requiredDocs = gameData.documentationEntries.filter(
+    (e) => e.isRequired
+  );
+  const completedDocs = requiredDocs.filter((e) => e.isComplete);
+  const documentationProgress =
+    requiredDocs.length > 0
+      ? (completedDocs.length / requiredDocs.length) * 100
+      : 0;
 
   // Time calculations
   const totalTimeSeconds = timeLimit * 60;
@@ -38,12 +46,18 @@ export default function ProgressIndicator({
   const secondsRemaining = gameData.timeRemaining % 60;
 
   // Overall completion
-  const overallProgress = (excavationProgress + artifactProgress + documentationProgress) / 3;
+  const overallProgress =
+    (excavationProgress + artifactProgress + documentationProgress) / 3;
 
   // Protocol compliance
   const totalViolations = gameData.protocolViolations.length;
-  const severeViolations = gameData.protocolViolations.filter(v => v.severity === 'severe').length;
-  const complianceScore = Math.max(0, 100 - (totalViolations * 5) - (severeViolations * 15));
+  const severeViolations = gameData.protocolViolations.filter(
+    (v) => v.severity === "severe"
+  ).length;
+  const complianceScore = Math.max(
+    0,
+    100 - totalViolations * 5 - severeViolations * 15
+  );
 
   const getProgressColor = (progress: number): string => {
     if (progress >= 80) return "bg-green-500";
@@ -53,8 +67,10 @@ export default function ProgressIndicator({
   };
 
   const getTimeColor = (): string => {
-    if (gameData.timeRemaining > totalTimeSeconds * 0.5) return "text-green-600";
-    if (gameData.timeRemaining > totalTimeSeconds * 0.25) return "text-yellow-600";
+    if (gameData.timeRemaining > totalTimeSeconds * 0.5)
+      return "text-green-600";
+    if (gameData.timeRemaining > totalTimeSeconds * 0.25)
+      return "text-yellow-600";
     return "text-red-600";
   };
 
@@ -71,9 +87,7 @@ export default function ProgressIndicator({
         <h3 className="text-lg font-semibold flex items-center gap-2">
           📊 Excavation Progress
         </h3>
-        <div className="text-sm text-gray-600">
-          {siteName}
-        </div>
+        <div className="text-sm text-gray-600">{siteName}</div>
       </div>
 
       {/* Time remaining */}
@@ -81,13 +95,15 @@ export default function ProgressIndicator({
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium">Time Remaining</span>
           <span className={`text-lg font-bold ${getTimeColor()}`}>
-            {minutesRemaining}:{secondsRemaining.toString().padStart(2, '0')}
+            {minutesRemaining}:{secondsRemaining.toString().padStart(2, "0")}
           </span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
+          <div
             className={`h-2 rounded-full transition-all duration-1000 ${
-              gameData.timeRemaining < totalTimeSeconds * 0.25 ? 'bg-red-500' : 'bg-blue-500'
+              gameData.timeRemaining < totalTimeSeconds * 0.25
+                ? "bg-red-500"
+                : "bg-blue-500"
             }`}
             style={{ width: `${Math.max(0, 100 - timeProgress)}%` }}
           />
@@ -103,7 +119,7 @@ export default function ProgressIndicator({
           </span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-3">
-          <div 
+          <div
             className={`h-3 rounded-full transition-all duration-500 ${getProgressColor(overallProgress)}`}
             style={{ width: `${overallProgress}%` }}
           />
@@ -115,7 +131,9 @@ export default function ProgressIndicator({
         {/* Excavation progress */}
         <div className="text-center p-3 bg-amber-50 rounded-lg">
           <div className="text-2xl mb-1">🏗️</div>
-          <div className="text-sm font-medium text-gray-700">Site Excavation</div>
+          <div className="text-sm font-medium text-gray-700">
+            Site Excavation
+          </div>
           <div className="text-lg font-bold text-amber-600">
             {Math.round(excavationProgress)}%
           </div>
@@ -123,7 +141,7 @@ export default function ProgressIndicator({
             {excavatedCells}/{totalCells} cells
           </div>
           <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
-            <div 
+            <div
               className={`h-1 rounded-full transition-all duration-300 ${getProgressColor(excavationProgress)}`}
               style={{ width: `${excavationProgress}%` }}
             />
@@ -133,7 +151,9 @@ export default function ProgressIndicator({
         {/* Artifact discovery */}
         <div className="text-center p-3 bg-yellow-50 rounded-lg">
           <div className="text-2xl mb-1">🏺</div>
-          <div className="text-sm font-medium text-gray-700">Artifacts Found</div>
+          <div className="text-sm font-medium text-gray-700">
+            Artifacts Found
+          </div>
           <div className="text-lg font-bold text-yellow-600">
             {Math.round(artifactProgress)}%
           </div>
@@ -141,7 +161,7 @@ export default function ProgressIndicator({
             {discoveredArtifacts}/{totalArtifacts} artifacts
           </div>
           <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
-            <div 
+            <div
               className={`h-1 rounded-full transition-all duration-300 ${getProgressColor(artifactProgress)}`}
               style={{ width: `${artifactProgress}%` }}
             />
@@ -159,7 +179,7 @@ export default function ProgressIndicator({
             {completedDocs.length}/{requiredDocs.length} required
           </div>
           <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
-            <div 
+            <div
               className={`h-1 rounded-full transition-all duration-300 ${getProgressColor(documentationProgress)}`}
               style={{ width: `${documentationProgress}%` }}
             />
@@ -171,19 +191,22 @@ export default function ProgressIndicator({
       <div className="p-3 bg-purple-50 rounded-lg">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium">Protocol Compliance</span>
-          <span className={`text-lg font-bold ${getComplianceColor(complianceScore)}`}>
+          <span
+            className={`text-lg font-bold ${getComplianceColor(complianceScore)}`}
+          >
             {Math.round(complianceScore)}%
           </span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
+          <div
             className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(complianceScore)}`}
             style={{ width: `${complianceScore}%` }}
           />
         </div>
         {totalViolations > 0 && (
           <div className="mt-2 text-xs text-purple-700">
-            {totalViolations} violation{totalViolations !== 1 ? 's' : ''} recorded
+            {totalViolations} violation{totalViolations !== 1 ? "s" : ""}{" "}
+            recorded
             {severeViolations > 0 && ` (${severeViolations} severe)`}
           </div>
         )}
@@ -194,7 +217,9 @@ export default function ProgressIndicator({
         <div className="space-y-1">
           <div className="flex justify-between">
             <span className="text-gray-600">Documentation Entries:</span>
-            <span className="font-medium">{gameData.documentationEntries.length}</span>
+            <span className="font-medium">
+              {gameData.documentationEntries.length}
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">Protocol Violations:</span>
@@ -229,7 +254,7 @@ export default function ProgressIndicator({
         </div>
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-          <span>Needs Work (<40%)</span>
+          <span>Needs Work (&lt;40%)</span>
         </div>
       </div>
     </div>

@@ -102,6 +102,8 @@ export const startExcavationGame = mutation({
           excavated: false,
           excavationDepth: 0,
           containsArtifact: false,
+          artifactId: undefined,
+          notes: undefined,
         });
       }
     }
@@ -169,7 +171,7 @@ export const processExcavationAction = mutation({
     const gameData = JSON.parse(session.gameData);
 
     // Get excavation site and artifacts
-    const site = await ctx.db.get(gameData.siteId);
+    const site = await ctx.db.get(gameData.siteId as Id<"excavationSites">);
     if (!site) {
       throw new Error("Excavation site not found");
     }
@@ -383,7 +385,7 @@ export const completeExcavationGame = mutation({
     }
 
     const gameData = JSON.parse(session.gameData);
-    const site = await ctx.db.get(gameData.siteId);
+    const site = await ctx.db.get(gameData.siteId as Id<"excavationSites">);
     if (!site) {
       throw new Error("Excavation site not found");
     }
@@ -435,7 +437,13 @@ export const getExcavationGameState = query({
       session: v.object({
         _id: v.id("gameSessions"),
         userId: v.id("users"),
-        gameType: v.literal("excavation_simulation"),
+        gameType: v.union(
+          v.literal("artifact_identification"),
+          v.literal("excavation_simulation"),
+          v.literal("site_documentation"),
+          v.literal("historical_timeline"),
+          v.literal("conservation_lab")
+        ),
         difficulty: v.union(
           v.literal("beginner"),
           v.literal("intermediate"),
@@ -495,7 +503,17 @@ export const getExcavationGameState = query({
         siteId: v.id("excavationSites"),
         currentTool: excavationToolValidator,
         discoveredArtifacts: v.array(v.id("gameArtifacts")),
-        excavatedCells: v.array(gridCellValidator),
+        excavatedCells: v.array(
+          v.object({
+            x: v.number(),
+            y: v.number(),
+            excavated: v.boolean(),
+            excavationDepth: v.number(),
+            containsArtifact: v.boolean(),
+            artifactId: v.optional(v.id("gameArtifacts")),
+            notes: v.optional(v.string()),
+          })
+        ),
         documentationEntries: v.array(documentationEntryValidator),
         timeRemaining: v.number(),
         protocolViolations: v.array(protocolViolationValidator),
@@ -510,7 +528,7 @@ export const getExcavationGameState = query({
     }
 
     const gameData = JSON.parse(session.gameData);
-    const site = await ctx.db.get(gameData.siteId);
+    const site = await ctx.db.get(gameData.siteId as Id<"excavationSites">);
     if (!site) {
       return null;
     }
@@ -526,18 +544,18 @@ export const getExcavationGameState = query({
       },
       gameData: {
         ...gameData,
-        documentationEntries: gameData.documentationEntries.map(
-          (entry: any) => ({
-            ...entry,
-            timestamp: new Date(entry.timestamp),
-          })
-        ),
-        protocolViolations: gameData.protocolViolations.map(
-          (violation: any) => ({
-            ...violation,
-            timestamp: new Date(violation.timestamp),
-          })
-        ),
+        // Ensure all cells have the required fields for backward compatibility
+        excavatedCells: gameData.excavatedCells.map((cell: any) => ({
+          x: cell.x,
+          y: cell.y,
+          excavated: cell.excavated,
+          excavationDepth: cell.excavationDepth,
+          containsArtifact: cell.containsArtifact,
+          artifactId: cell.artifactId || undefined,
+          notes: cell.notes || undefined,
+        })),
+        documentationEntries: gameData.documentationEntries || [],
+        protocolViolations: gameData.protocolViolations || [],
       },
     };
   },

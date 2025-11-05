@@ -117,11 +117,13 @@ export default function ExcavationGrid({
         )}
 
         {/* Potential artifact indicator (for discovered but not excavated) */}
-        {artifact && !cell?.containsArtifact && cell?.excavationDepth > 0.5 && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-4 h-4 bg-yellow-300 rounded-full border border-yellow-500 opacity-60" />
-          </div>
-        )}
+        {artifact &&
+          !cell?.containsArtifact &&
+          (cell?.excavationDepth ?? 0) > 0.5 && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-4 h-4 bg-yellow-300 rounded-full border border-yellow-500 opacity-60" />
+            </div>
+          )}
 
         {/* Tool cursor indicator */}
         {hoveredCell?.x === x && hoveredCell?.y === y && !disabled && (

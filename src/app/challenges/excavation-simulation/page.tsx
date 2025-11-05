@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { useUser } from "@clerk/nextjs";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 // Import excavation game components
 import ExcavationGrid from "../../../components/games/ExcavationGrid";
@@ -14,12 +16,10 @@ import ProgressIndicator from "../../../components/games/ProgressIndicator";
 
 // Import game logic
 import {
-  ExcavationGameData,
   ExcavationTool,
   DocumentationEntry,
   DifficultyLevel,
 } from "../../../types";
-import { EXCAVATION_TOOLS } from "../../../lib/excavationGameLogic";
 
 export default function ExcavationSimulationPage() {
   const { user } = useUser();
@@ -35,6 +35,7 @@ export default function ExcavationSimulationPage() {
     useState<Id<"excavationSites"> | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] =
     useState<DifficultyLevel>("beginner");
+  const [isInitializing, setIsInitializing] = useState(false);
 
   // Convex queries and mutations
   const gameState = useQuery(
@@ -49,6 +50,9 @@ export default function ExcavationSimulationPage() {
     }
   );
 
+  const databaseStatus = useQuery(api.seedDatabase.checkDatabaseStatus, {});
+  const initializeDatabase = useMutation(api.seedDatabase.initializeDatabase);
+
   const startGame = useMutation(api.excavationGame.startExcavationGame);
   const processAction = useMutation(api.excavationGame.processExcavationAction);
   const addDocumentation = useMutation(
@@ -61,6 +65,23 @@ export default function ExcavationSimulationPage() {
     api.users.getUserByClerkId,
     user?.id ? { clerkId: user.id } : "skip"
   );
+
+  const handleInitializeDatabase = async () => {
+    setIsInitializing(true);
+    try {
+      const result = await initializeDatabase({});
+      if (result.success) {
+        alert(`Database initialized successfully! ${result.message}`);
+      } else {
+        alert(`Failed to initialize database: ${result.message}`);
+      }
+    } catch (error) {
+      console.error("Failed to initialize database:", error);
+      alert("Failed to initialize database. Please try again.");
+    } finally {
+      setIsInitializing(false);
+    }
+  };
 
   const handleStartGame = async () => {
     if (!currentUser || !selectedSiteId) return;
@@ -157,12 +178,46 @@ export default function ExcavationSimulationPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen wave-bg flex items-center justify-center">
+        <div className="text-center text-white">
           <h1 className="text-2xl font-bold mb-4">Please sign in to play</h1>
-          <p className="text-gray-600">
-            You need to be signed in to access the excavation simulation.
+          <p>You need to be signed in to access the excavation simulation.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if database needs initialization
+  if (databaseStatus && !databaseStatus.isInitialized) {
+    return (
+      <div className="min-h-screen wave-bg flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6 bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-md rounded-3xl border border-white/30">
+          <h1 className="text-2xl font-bold mb-4 text-white font-fredoka">
+            🏛️ Database Setup Required
+          </h1>
+          <p className="text-ocean-50 mb-6">
+            The excavation simulation needs to be initialized with sample data.
+            This will create artifacts and excavation sites for you to explore.
           </p>
+          <div className="mb-4 text-sm text-ocean-100">
+            <p>Current status:</p>
+            <p>• Artifacts: {databaseStatus.artifactsCount}</p>
+            <p>• Excavation Sites: {databaseStatus.sitesCount}</p>
+          </div>
+          <button
+            onClick={handleInitializeDatabase}
+            disabled={isInitializing}
+            className="w-full py-3 px-6 bg-sand-400 hover:bg-sand-500 text-sand-900 rounded-2xl font-medium disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          >
+            {isInitializing ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-sand-900 mr-2"></div>
+                Initializing Database...
+              </div>
+            ) : (
+              "Initialize Database"
+            )}
+          </button>
         </div>
       </div>
     );
@@ -170,127 +225,178 @@ export default function ExcavationSimulationPage() {
 
   if (!gameStarted) {
     return (
-      <div className="min-h-screen bg-blue-50 py-8">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-blue-900 mb-4">
-              🏛️ Underwater Excavation Simulation
-            </h1>
-            <p className="text-lg text-gray-700">
-              Learn proper archaeological excavation techniques through
-              interactive simulation
-            </p>
-          </div>
+      <div className="min-h-screen wave-bg relative overflow-hidden font-poppins">
+        {/* Header */}
+        <header className="relative z-10 p-6 flex justify-between items-center backdrop-blur-sm bg-white/5 border-b border-white/10">
+          <Link
+            href="/challenges"
+            className="text-white font-bold text-xl md:text-2xl flex items-center gap-3 font-fredoka hover:text-sand-300 transition-colors"
+          >
+            <ArrowLeft className="w-6 h-6" />
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🤿</span>
+              <span className="hidden sm:inline">Excavation Simulation</span>
+              <span className="sm:hidden">Excavation</span>
+            </div>
+          </Link>
+        </header>
 
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h2 className="text-2xl font-semibold mb-4">
-              Select Difficulty Level
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              {(
-                ["beginner", "intermediate", "advanced"] as DifficultyLevel[]
-              ).map((difficulty) => (
-                <button
-                  key={difficulty}
-                  onClick={() => setSelectedDifficulty(difficulty)}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    selectedDifficulty === difficulty
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  <div className="text-lg font-medium capitalize">
-                    {difficulty}
-                  </div>
-                  <div className="text-sm text-gray-600 mt-1">
-                    {difficulty === "beginner" && "Perfect for learning basics"}
-                    {difficulty === "intermediate" && "Moderate challenge"}
-                    {difficulty === "advanced" && "Expert level difficulty"}
-                  </div>
-                </button>
-              ))}
+        {/* Main Content */}
+        <main className="relative z-10 container mx-auto px-6 py-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-8">
+              <h1 className="text-4xl md:text-6xl font-black text-white mb-4 font-fredoka">
+                Underwater{" "}
+                <span className="bg-gradient-to-r from-sand-200 via-sand-400 to-sand-600 bg-clip-text text-transparent">
+                  Excavation
+                </span>
+              </h1>
+              <p className="text-xl text-ocean-50 max-w-2xl mx-auto">
+                🤿 Learn proper archaeological excavation techniques through
+                interactive simulation
+              </p>
             </div>
 
-            <h2 className="text-2xl font-semibold mb-4">
-              Choose Excavation Site
-            </h2>
-            {excavationSites && excavationSites.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                {excavationSites.map((site) => (
+            {/* Difficulty Selection */}
+            <div className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-md rounded-3xl p-8 mb-8 border border-white/30">
+              <h2 className="text-2xl font-bold text-white mb-6 text-center font-fredoka">
+                Choose Your Difficulty
+              </h2>
+              <div className="grid md:grid-cols-3 gap-4 mb-6">
+                {(
+                  ["beginner", "intermediate", "advanced"] as DifficultyLevel[]
+                ).map((level) => (
                   <button
-                    key={site._id}
-                    onClick={() => setSelectedSiteId(site._id)}
-                    className={`p-4 rounded-lg border-2 text-left transition-all ${
-                      selectedSiteId === site._id
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-gray-200 hover:border-gray-300"
+                    key={level}
+                    onClick={() => setSelectedDifficulty(level)}
+                    className={`p-6 rounded-2xl border-2 transition-all ${
+                      selectedDifficulty === level
+                        ? "border-sand-400 bg-sand-400/20 text-white"
+                        : "border-white/30 bg-white/10 text-ocean-100 hover:border-sand-300 hover:bg-white/20"
                     }`}
                   >
-                    <div className="font-medium text-lg">{site.name}</div>
-                    <div className="text-sm text-gray-600 mb-2">
-                      {site.location}
+                    <div className="text-3xl mb-2">
+                      {level === "beginner"
+                        ? "🌊"
+                        : level === "intermediate"
+                          ? "🏊"
+                          : "🤿"}
                     </div>
-                    <div className="text-sm text-gray-700">
-                      {site.description}
-                    </div>
-                    <div className="mt-2 flex justify-between text-xs">
-                      <span>
-                        Grid: {site.gridWidth}×{site.gridHeight}
-                      </span>
-                      <span>Artifacts: {site.siteArtifacts.length}</span>
-                    </div>
+                    <h3 className="text-lg font-bold capitalize mb-2">
+                      {level}
+                    </h3>
+                    <p className="text-sm opacity-80">
+                      {level === "beginner" && "Perfect for learning basics"}
+                      {level === "intermediate" && "Moderate challenge"}
+                      {level === "advanced" && "Expert level difficulty"}
+                    </p>
                   </button>
                 ))}
               </div>
-            ) : (
-              <div className="text-center py-8">
-                <div className="text-gray-500">Loading excavation sites...</div>
-              </div>
-            )}
+              <h2 className="text-2xl font-bold text-white mb-6 text-center font-fredoka">
+                Choose Excavation Site
+              </h2>
+              {!excavationSites ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sand-400 mx-auto mb-4"></div>
+                  <div className="text-ocean-100">
+                    Loading excavation sites...
+                  </div>
+                </div>
+              ) : excavationSites.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  {excavationSites.map((site: any) => (
+                    <button
+                      key={site._id}
+                      onClick={() => setSelectedSiteId(site._id)}
+                      className={`p-6 rounded-2xl border-2 text-left transition-all ${
+                        selectedSiteId === site._id
+                          ? "border-sand-400 bg-sand-400/20 text-white"
+                          : "border-white/30 bg-white/10 text-ocean-100 hover:border-sand-300 hover:bg-white/20"
+                      }`}
+                    >
+                      <div className="font-medium text-lg mb-2">
+                        {site.name}
+                      </div>
+                      <div className="text-sm opacity-80 mb-2">
+                        {site.location}
+                      </div>
+                      <div className="text-sm opacity-90 mb-3">
+                        {site.description}
+                      </div>
+                      <div className="flex justify-between text-xs opacity-70">
+                        <span>
+                          Grid: {site.gridWidth}×{site.gridHeight}
+                        </span>
+                        <span>Artifacts: {site.siteArtifacts.length}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-ocean-100 mb-4">
+                    No excavation sites available for this difficulty level.
+                  </div>
+                  <p className="text-sm text-ocean-200">
+                    The database may need to be initialized. Visit the{" "}
+                    <a href="/admin" className="text-sand-300 hover:underline">
+                      admin page
+                    </a>{" "}
+                    to set up the initial data.
+                  </p>
+                </div>
+              )}
+              <button
+                onClick={handleStartGame}
+                disabled={!selectedSiteId || !currentUser}
+                className="w-full py-3 px-6 bg-sand-400 hover:bg-sand-500 text-sand-900 rounded-2xl font-medium disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              >
+                Start Excavation Simulation
+              </button>
+            </div>
 
-            <button
-              onClick={handleStartGame}
-              disabled={!selectedSiteId || !currentUser}
-              className="w-full py-3 px-6 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-            >
-              Start Excavation Simulation
-            </button>
-          </div>
-
-          {/* Game instructions */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4">🎯 How to Play</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-medium mb-2">Excavation</h3>
-                <ul className="text-sm space-y-1 text-gray-700">
-                  <li>• Click on grid cells to excavate</li>
-                  <li>• Use appropriate tools for different tasks</li>
-                  <li>• Watch for artifacts as you dig deeper</li>
-                  <li>• Follow proper archaeological protocols</li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-medium mb-2">Documentation</h3>
-                <ul className="text-sm space-y-1 text-gray-700">
-                  <li>• Record all discoveries and measurements</li>
-                  <li>• Take photos of artifacts in situ</li>
-                  <li>• Document your excavation methods</li>
-                  <li>• Complete required documentation entries</li>
-                </ul>
+            {/* Game instructions */}
+            <div className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/30">
+              <h2 className="text-2xl font-bold text-white mb-6 text-center font-fredoka">
+                🎯 How to Play
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-medium mb-3 text-sand-300 text-lg">
+                    Excavation
+                  </h3>
+                  <ul className="text-sm space-y-2 text-ocean-100">
+                    <li>• Click on grid cells to excavate</li>
+                    <li>• Use appropriate tools for different tasks</li>
+                    <li>• Watch for artifacts as you dig deeper</li>
+                    <li>• Follow proper archaeological protocols</li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="font-medium mb-3 text-sand-300 text-lg">
+                    Documentation
+                  </h3>
+                  <ul className="text-sm space-y-2 text-ocean-100">
+                    <li>• Record all discoveries and measurements</li>
+                    <li>• Take photos of artifacts in situ</li>
+                    <li>• Document your excavation methods</li>
+                    <li>• Complete required documentation entries</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </main>
       </div>
     );
   }
 
   if (!gameState) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <div className="min-h-screen wave-bg flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sand-400 mx-auto mb-4"></div>
           <div>Loading excavation site...</div>
         </div>
       </div>
@@ -298,81 +404,109 @@ export default function ExcavationSimulationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-blue-50 py-4">
-      <div className="max-w-7xl mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-blue-900 mb-2">
-            {gameState.site.name}
-          </h1>
-          <p className="text-gray-700">
-            {gameState.site.location} • {gameState.site.historicalPeriod}
-          </p>
-        </div>
+    <div className="min-h-screen wave-bg relative overflow-hidden font-poppins">
+      {/* Header */}
+      <header className="relative z-10 p-6 flex justify-between items-center backdrop-blur-sm bg-white/5 border-b border-white/10">
+        <Link
+          href="/challenges"
+          className="text-white font-bold text-xl md:text-2xl flex items-center gap-3 font-fredoka hover:text-sand-300 transition-colors"
+        >
+          <ArrowLeft className="w-6 h-6" />
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🤿</span>
+            <span className="hidden sm:inline">Excavation Simulation</span>
+            <span className="sm:hidden">Excavation</span>
+          </div>
+        </Link>
+      </header>
 
-        {/* Game interface */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column - Tools and Progress */}
-          <div className="space-y-6">
-            <ToolSelector
-              currentTool={gameState.gameData.currentTool}
-              onToolSelect={handleToolSelect}
-              environmentalConditions={gameState.site.environmentalConditions}
-              disabled={gameState.session.status !== "active"}
-            />
-
-            <ProgressIndicator
-              gameData={gameState.gameData}
-              siteArtifacts={gameState.site.siteArtifacts}
-              siteName={gameState.site.name}
-              timeLimit={gameState.site.environmentalConditions.timeConstraints}
-            />
+      {/* Main Content */}
+      <main className="relative z-10 container mx-auto px-6 py-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Site Header */}
+          <div className="text-center mb-6">
+            <h1 className="text-3xl md:text-4xl font-black text-white mb-2 font-fredoka">
+              {gameState.site.name}
+            </h1>
+            <p className="text-ocean-100">
+              {gameState.site.location} • {gameState.site.historicalPeriod}
+            </p>
           </div>
 
-          {/* Center column - Excavation Grid */}
-          <div className="flex flex-col items-center">
-            <ExcavationGrid
-              gridWidth={gameState.site.gridWidth}
-              gridHeight={gameState.site.gridHeight}
-              cells={gameState.gameData.excavatedCells}
-              currentTool={gameState.gameData.currentTool}
-              siteArtifacts={gameState.site.siteArtifacts}
-              onCellClick={handleCellClick}
-              onCellHover={(x, y) => setSelectedCell({ x, y })}
-              disabled={gameState.session.status !== "active"}
-            />
+          {/* Game interface */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left column - Tools and Progress */}
+            <div className="space-y-6">
+              <div className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/30">
+                <ToolSelector
+                  currentTool={gameState.gameData.currentTool}
+                  onToolSelect={handleToolSelect}
+                  environmentalConditions={
+                    gameState.site.environmentalConditions
+                  }
+                  disabled={gameState.session.status !== "active"}
+                />
+              </div>
 
-            {/* Game controls */}
-            <div className="mt-6 flex gap-4">
-              <button
-                onClick={handleCompleteGame}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Complete Excavation
-              </button>
-              <button
-                onClick={() => {
-                  setGameStarted(false);
-                  setGameSessionId(null);
-                }}
-                className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                Exit Game
-              </button>
+              <div className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/30">
+                <ProgressIndicator
+                  gameData={gameState.gameData}
+                  siteArtifacts={gameState.site.siteArtifacts}
+                  siteName={gameState.site.name}
+                  timeLimit={
+                    gameState.site.environmentalConditions.timeConstraints
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Center column - Excavation Grid */}
+            <div className="flex flex-col items-center">
+              <div className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/30 mb-6">
+                <ExcavationGrid
+                  gridWidth={gameState.site.gridWidth}
+                  gridHeight={gameState.site.gridHeight}
+                  cells={gameState.gameData.excavatedCells}
+                  currentTool={gameState.gameData.currentTool}
+                  siteArtifacts={gameState.site.siteArtifacts}
+                  onCellClick={handleCellClick}
+                  onCellHover={(x, y) => setSelectedCell({ x, y })}
+                  disabled={gameState.session.status !== "active"}
+                />
+              </div>
+
+              {/* Game controls */}
+              <div className="flex gap-4">
+                <button
+                  onClick={handleCompleteGame}
+                  className="px-6 py-3 bg-sand-400 hover:bg-sand-500 text-sand-900 rounded-2xl font-bold transition-colors"
+                >
+                  Complete Excavation
+                </button>
+                <button
+                  onClick={() => {
+                    setGameStarted(false);
+                    setGameSessionId(null);
+                  }}
+                  className="px-6 py-3 border-2 border-white/30 text-white hover:bg-white/10 rounded-2xl font-bold transition-colors"
+                >
+                  Exit Game
+                </button>
+              </div>
+            </div>
+
+            {/* Right column - Documentation */}
+            <div className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/30">
+              <DocumentationPanel
+                entries={gameState.gameData.documentationEntries}
+                selectedCell={selectedCell || undefined}
+                onAddEntry={handleAddDocumentation}
+                disabled={gameState.session.status !== "active"}
+              />
             </div>
           </div>
-
-          {/* Right column - Documentation */}
-          <div>
-            <DocumentationPanel
-              entries={gameState.gameData.documentationEntries}
-              selectedCell={selectedCell || undefined}
-              onAddEntry={handleAddDocumentation}
-              disabled={gameState.session.status !== "active"}
-            />
-          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

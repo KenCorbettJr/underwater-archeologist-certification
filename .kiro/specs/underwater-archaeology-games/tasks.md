@@ -72,14 +72,14 @@
     - Generate digital site reports upon excavation completion
     - _Requirements: 3.2, 3.3, 3.4, 3.5_
 
-  - [ ]\* 4.4 Test excavation simulation functionality
+  - [x] 4.4 Test excavation simulation functionality
     - Write tests for grid system accuracy and tool interactions
     - Validate excavation protocol enforcement
     - Test site report generation and data accuracy
     - _Requirements: 3.2, 3.3, 3.5_
 
-- [ ] 5. Implement progress tracking system
-  - [ ] 5.1 Build progress calculation engine
+- [-] 5. Implement progress tracking system
+  - [x] 5.1 Build progress calculation engine
     - Create ProgressTracker class with real-time calculation capabilities
     - Implement completion percentage algorithms for each game type
     - Add cross-game progress aggregation and weighting systems

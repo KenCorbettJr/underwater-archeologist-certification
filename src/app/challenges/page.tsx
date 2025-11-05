@@ -26,7 +26,15 @@ export default function ChallengesPage() {
             </span>
           </div>
         </Link>
-        <UserButton />
+        <div className="flex items-center gap-4">
+          <Link
+            href="/admin"
+            className="text-white/70 hover:text-white text-sm transition-colors"
+          >
+            Admin
+          </Link>
+          <UserButton />
+        </div>
       </header>
 
       {/* Main Content */}

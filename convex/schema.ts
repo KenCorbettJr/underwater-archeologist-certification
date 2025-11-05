@@ -135,7 +135,8 @@ export default defineSchema({
   })
     .index("by_user_and_game_type", ["userId", "gameType"])
     .index("by_user_and_status", ["userId", "status"])
-    .index("by_game_type_and_difficulty", ["gameType", "difficulty"]),
+    .index("by_game_type_and_difficulty", ["gameType", "difficulty"])
+    .index("by_status", ["status"]),
 
   gameArtifacts: defineTable({
     name: v.string(),
@@ -145,6 +146,7 @@ export default defineSchema({
     dateRange: v.string(),
     significance: v.string(),
     imageUrl: v.string(),
+    imageStorageId: v.optional(v.id("_storage")),
     modelUrl: v.optional(v.string()),
     discoveryLocation: v.string(),
     conservationNotes: v.string(),
@@ -228,4 +230,17 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_verification_code", ["verificationCode"])
     .index("by_issue_date", ["issueDate"]),
+
+  // Admin system tables
+  adminLogs: defineTable({
+    adminClerkId: v.string(),
+    action: v.string(), // "create_artifact", "update_site", etc.
+    resourceType: v.string(),
+    resourceId: v.optional(v.string()),
+    details: v.optional(v.string()),
+    timestamp: v.number(),
+  })
+    .index("by_admin", ["adminClerkId"])
+    .index("by_timestamp", ["timestamp"])
+    .index("by_resource_type", ["resourceType"]),
 });

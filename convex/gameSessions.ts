@@ -71,7 +71,7 @@ export const createGameSession = mutation({
 /**
  * Get active game session for a user and game type
  */
-export const getActiveGameSession = query({
+export const getActiveGameSession = mutation({
   args: {
     userId: v.id("users"),
     gameType: v.union(
@@ -368,7 +368,7 @@ export const cleanupExpiredSessions = internalMutation({
     // Find all active sessions that have expired
     const expiredSessions = await ctx.db
       .query("gameSessions")
-      .withIndex("by_user_and_status", (q) => q.eq("status", "active"))
+      .withIndex("by_status", (q) => q.eq("status", "active"))
       .filter((q) => q.lt(q.field("startTime"), cutoffTime))
       .collect();
 
