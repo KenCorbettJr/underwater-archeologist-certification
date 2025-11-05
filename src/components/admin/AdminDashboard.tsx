@@ -85,15 +85,64 @@ function QuickAction({
 }
 
 export function AdminDashboard() {
+  // Always call hooks in the same order - never conditionally
+  const users = useQuery(api.adminAuth.getAllUsersForAdmin, {});
+  const databaseStatus = useQuery(api.seedDatabase.checkDatabaseStatus, {});
   const analytics = useQuery(api.adminAnalytics.getDashboardAnalytics, {});
   const adminLogs = useQuery(api.adminAuth.getAdminLogs, { limit: 10 });
 
-  if (!analytics) {
+  // Add debugging information
+  console.log("AdminDashboard - Users:", users);
+  console.log("AdminDashboard - DatabaseStatus:", databaseStatus);
+  console.log("AdminDashboard - Analytics:", analytics);
+  console.log("AdminDashboard - AdminLogs:", adminLogs);
+
+  // Show loading state if any queries are still loading
+  if (
+    users === undefined ||
+    databaseStatus === undefined ||
+    analytics === undefined ||
+    adminLogs === undefined
+  ) {
     return (
       <div className="space-y-6">
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard analytics...</p>
+          <p className="text-gray-600">Loading admin dashboard...</p>
+          <div className="text-sm text-gray-500 mt-4 space-y-1">
+            <p>
+              Users:{" "}
+              {users === undefined ? "Loading..." : `${users.length} loaded`}
+            </p>
+            <p>
+              Database: {databaseStatus === undefined ? "Loading..." : "Loaded"}
+            </p>
+            <p>
+              Analytics: {analytics === undefined ? "Loading..." : "Loaded"}
+            </p>
+            <p>
+              Admin Logs: {adminLogs === undefined ? "Loading..." : "Loaded"}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if any queries failed
+  if (
+    users === null ||
+    databaseStatus === null ||
+    analytics === null ||
+    adminLogs === null
+  ) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-600">Failed to load admin dashboard</p>
+          <p className="text-sm text-red-500 mt-2">
+            One or more queries failed. Check Convex connection and permissions.
+          </p>
         </div>
       </div>
     );

@@ -1,4 +1,4 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 
 /**
@@ -9,10 +9,6 @@ export async function validateAdminRole(
   ctx: any,
   adminClerkId: string
 ): Promise<void> {
-  // In a production environment, you would validate the admin role here
-  // by checking the Clerk user metadata or maintaining an admin users table
-  // For now, we'll implement basic validation
-
   // Check if the user exists in our system
   const user = await ctx.db
     .query("users")
@@ -23,44 +19,71 @@ export async function validateAdminRole(
     throw new Error("User not found in system");
   }
 
-  // Note: In a complete implementation, you would also verify the admin role
-  // by checking Clerk metadata or a separate admin users table
-  // For this implementation, we assume the adminClerkId is validated at the API layer
+  // Note: Admin role validation is handled at the middleware/API layer
+  // by checking Clerk's publicMetadata.role === "admin"
+  // This function assumes the adminClerkId has already been validated
 }
 
 /**
- * Get current user's admin status - used by client-side admin guard
+ * Internal query to get user by Clerk ID
  */
-export const getCurrentUserAdminStatus = query({
+export const getUserByClerkId = internalQuery({
   args: { clerkId: v.string() },
-  returns: v.object({
-    isAdmin: v.boolean(),
-    userId: v.optional(v.id("users")),
-  }),
+  returns: v.union(
+    v.object({
+      _id: v.id("users"),
+      clerkId: v.string(),
+      email: v.string(),
+      name: v.string(),
+    }),
+    v.null()
+  ),
   handler: async (ctx, args) => {
-    // Check if user exists in our system
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
       .first();
 
     if (!user) {
-      return { isAdmin: false };
+      return null;
     }
 
-    // For now, we'll check if the user has admin role in Clerk metadata
-    // In a real implementation, this would integrate with Clerk's user metadata
-    // or maintain a separate admin users table
+    return {
+      _id: user._id,
+      clerkId: user.clerkId,
+      email: user.email,
+      name: user.name,
+    };
+  },
+});
 
-    // Temporary: Check if user email contains "admin" or if they're in a hardcoded list
-    // This should be replaced with proper Clerk metadata checking
-    const isAdmin =
-      user.email === "kenneth.corbett@gmail.com" || // Add your admin email here
-      user.email === "admin@underwater-archaeology.com";
+/**
+ * Get current user's basic info - used when admin status is already verified
+ */
+export const getCurrentUserInfo = query({
+  args: { clerkId: v.string() },
+  returns: v.union(
+    v.object({
+      userId: v.id("users"),
+      name: v.string(),
+      email: v.string(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) {
+      return null;
+    }
 
     return {
-      isAdmin,
       userId: user._id,
+      name: user.name,
+      email: user.email,
     };
   },
 });

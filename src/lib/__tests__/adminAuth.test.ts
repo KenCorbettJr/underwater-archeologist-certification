@@ -25,7 +25,7 @@ describe("Admin Authentication", () => {
       const { clerkClient } = await import("@clerk/nextjs/server");
       vi.mocked(clerkClient).mockResolvedValue(mockClerkClient as any);
 
-      const { isUserAdmin } = await import("../adminAuth");
+      const { isUserAdmin } = await import("../adminServerAuth");
       const result = await isUserAdmin("test-user-id");
 
       expect(result).toBe(true);
@@ -47,7 +47,7 @@ describe("Admin Authentication", () => {
       const { clerkClient } = await import("@clerk/nextjs/server");
       vi.mocked(clerkClient).mockResolvedValue(mockClerkClient as any);
 
-      const { isUserAdmin } = await import("../adminAuth");
+      const { isUserAdmin } = await import("../adminServerAuth");
       const result = await isUserAdmin("test-user-id");
 
       expect(result).toBe(false);
@@ -66,7 +66,7 @@ describe("Admin Authentication", () => {
       const { clerkClient } = await import("@clerk/nextjs/server");
       vi.mocked(clerkClient).mockResolvedValue(mockClerkClient as any);
 
-      const { isUserAdmin } = await import("../adminAuth");
+      const { isUserAdmin } = await import("../adminServerAuth");
       const result = await isUserAdmin("test-user-id");
 
       expect(result).toBe(false);
@@ -83,7 +83,7 @@ describe("Admin Authentication", () => {
       const { clerkClient } = await import("@clerk/nextjs/server");
       vi.mocked(clerkClient).mockResolvedValue(mockClerkClient as any);
 
-      const { isUserAdmin } = await import("../adminAuth");
+      const { isUserAdmin } = await import("../adminServerAuth");
       const result = await isUserAdmin("test-user-id");
 
       expect(result).toBe(false);
@@ -107,7 +107,7 @@ describe("Admin Authentication", () => {
       };
       vi.mocked(clerkClient).mockResolvedValue(mockClerkClient as any);
 
-      const { getCurrentUserAdminStatus } = await import("../adminAuth");
+      const { getCurrentUserAdminStatus } = await import("../adminServerAuth");
       const result = await getCurrentUserAdminStatus();
 
       expect(result).toEqual({
@@ -133,7 +133,7 @@ describe("Admin Authentication", () => {
       };
       vi.mocked(clerkClient).mockResolvedValue(mockClerkClient as any);
 
-      const { getCurrentUserAdminStatus } = await import("../adminAuth");
+      const { getCurrentUserAdminStatus } = await import("../adminServerAuth");
       const result = await getCurrentUserAdminStatus();
 
       expect(result).toEqual({
@@ -149,13 +149,45 @@ describe("Admin Authentication", () => {
       // Mock auth to return no user ID
       vi.mocked(auth).mockResolvedValue({ userId: null } as any);
 
-      const { getCurrentUserAdminStatus } = await import("../adminAuth");
+      const { getCurrentUserAdminStatus } = await import("../adminServerAuth");
       const result = await getCurrentUserAdminStatus();
 
       expect(result).toEqual({
         isAuthenticated: false,
         isAdmin: false,
       });
+    });
+  });
+
+  describe("checkAdminRole (client-side)", () => {
+    it("should return true for admin role", async () => {
+      const { checkAdminRole } = await import("../adminAuth");
+      const result = checkAdminRole({ role: "admin" });
+      expect(result).toBe(true);
+    });
+
+    it("should return false for non-admin role", async () => {
+      const { checkAdminRole } = await import("../adminAuth");
+      const result = checkAdminRole({ role: "user" });
+      expect(result).toBe(false);
+    });
+
+    it("should return false for no role", async () => {
+      const { checkAdminRole } = await import("../adminAuth");
+      const result = checkAdminRole({});
+      expect(result).toBe(false);
+    });
+
+    it("should return false for null metadata", async () => {
+      const { checkAdminRole } = await import("../adminAuth");
+      const result = checkAdminRole(null);
+      expect(result).toBe(false);
+    });
+
+    it("should return false for undefined metadata", async () => {
+      const { checkAdminRole } = await import("../adminAuth");
+      const result = checkAdminRole(undefined);
+      expect(result).toBe(false);
     });
   });
 });
