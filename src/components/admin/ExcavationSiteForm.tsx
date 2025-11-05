@@ -53,7 +53,7 @@ export function ExcavationSiteForm({
 
   const existingSite = useQuery(
     api.adminExcavationSites.getExcavationSiteForAdmin,
-    siteId ? { siteId } : undefined
+    siteId ? { siteId } : "skip"
   );
 
   const availableArtifacts = useQuery(

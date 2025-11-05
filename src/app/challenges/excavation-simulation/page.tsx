@@ -43,7 +43,7 @@ function ExcavationSimulationContent() {
   // Convex queries and mutations
   const gameState = useQuery(
     api.excavationGame.getExcavationGameState,
-    gameSessionId ? { sessionId: gameSessionId } : undefined
+    gameSessionId ? { sessionId: gameSessionId } : "skip"
   );
 
   const excavationSites = useQuery(
