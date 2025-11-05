@@ -41,7 +41,7 @@ export function ArtifactForm({
 
   const existingArtifact = useQuery(
     api.adminArtifacts.getArtifactForAdmin,
-    artifactId ? { artifactId } : "skip"
+    artifactId ? { artifactId } : undefined
   );
 
   // Get the current image URL from storage if we have a storage ID

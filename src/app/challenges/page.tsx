@@ -3,8 +3,9 @@
 import { UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 
-export default function ChallengesPage() {
+function ChallengesPageContent() {
   return (
     <div className="min-h-screen wave-bg relative overflow-hidden font-poppins">
       {/* Header */}
@@ -190,5 +191,13 @@ export default function ChallengesPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function ChallengesPage() {
+  return (
+    <AuthGuard>
+      <ChallengesPageContent />
+    </AuthGuard>
   );
 }

@@ -29,6 +29,43 @@ export async function validateAdminRole(
 }
 
 /**
+ * Get current user's admin status - used by client-side admin guard
+ */
+export const getCurrentUserAdminStatus = query({
+  args: { clerkId: v.string() },
+  returns: v.object({
+    isAdmin: v.boolean(),
+    userId: v.optional(v.id("users")),
+  }),
+  handler: async (ctx, args) => {
+    // Check if user exists in our system
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) {
+      return { isAdmin: false };
+    }
+
+    // For now, we'll check if the user has admin role in Clerk metadata
+    // In a real implementation, this would integrate with Clerk's user metadata
+    // or maintain a separate admin users table
+
+    // Temporary: Check if user email contains "admin" or if they're in a hardcoded list
+    // This should be replaced with proper Clerk metadata checking
+    const isAdmin =
+      user.email === "kenneth.corbett@gmail.com" || // Add your admin email here
+      user.email === "admin@underwater-archaeology.com";
+
+    return {
+      isAdmin,
+      userId: user._id,
+    };
+  },
+});
+
+/**
  * Get all users with their admin status for admin management
  */
 export const getAllUsersForAdmin = query({

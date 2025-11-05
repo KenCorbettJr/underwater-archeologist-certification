@@ -4,9 +4,12 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
-import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import {
+  AuthGuard,
+  useAuthenticatedUser,
+} from "../../../components/auth/AuthGuard";
 
 // Import excavation game components
 import ExcavationGrid from "../../../components/games/ExcavationGrid";
@@ -21,8 +24,8 @@ import {
   DifficultyLevel,
 } from "../../../types";
 
-export default function ExcavationSimulationPage() {
-  const { user } = useUser();
+function ExcavationSimulationContent() {
+  const user = useAuthenticatedUser();
   const [gameSessionId, setGameSessionId] = useState<Id<"gameSessions"> | null>(
     null
   );
@@ -40,7 +43,7 @@ export default function ExcavationSimulationPage() {
   // Convex queries and mutations
   const gameState = useQuery(
     api.excavationGame.getExcavationGameState,
-    gameSessionId ? { sessionId: gameSessionId } : "skip"
+    gameSessionId ? { sessionId: gameSessionId } : undefined
   );
 
   const excavationSites = useQuery(
@@ -61,10 +64,9 @@ export default function ExcavationSimulationPage() {
   const completeGame = useMutation(api.excavationGame.completeExcavationGame);
 
   // Get current user from database
-  const currentUser = useQuery(
-    api.users.getUserByClerkId,
-    user?.id ? { clerkId: user.id } : "skip"
-  );
+  const currentUser = useQuery(api.users.getUserByClerkId, {
+    clerkId: user.id,
+  });
 
   const handleInitializeDatabase = async () => {
     setIsInitializing(true);
@@ -176,16 +178,7 @@ export default function ExcavationSimulationPage() {
     }
   }, [gameState?.gameData?.timeRemaining]);
 
-  if (!user) {
-    return (
-      <div className="min-h-screen wave-bg flex items-center justify-center">
-        <div className="text-center text-white">
-          <h1 className="text-2xl font-bold mb-4">Please sign in to play</h1>
-          <p>You need to be signed in to access the excavation simulation.</p>
-        </div>
-      </div>
-    );
-  }
+  // User is guaranteed to be authenticated by AuthGuard
 
   // Check if database needs initialization
   if (databaseStatus && !databaseStatus.isInitialized) {
@@ -508,5 +501,13 @@ export default function ExcavationSimulationPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function ExcavationSimulationPage() {
+  return (
+    <AuthGuard>
+      <ExcavationSimulationContent />
+    </AuthGuard>
   );
 }

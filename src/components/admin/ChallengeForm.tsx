@@ -57,7 +57,7 @@ export function ChallengeForm({
 
   const existingChallenge = useQuery(
     api.adminChallenges.getChallengeForAdmin,
-    challengeId ? { challengeId } : "skip"
+    challengeId ? { challengeId } : undefined
   );
 
   useEffect(() => {

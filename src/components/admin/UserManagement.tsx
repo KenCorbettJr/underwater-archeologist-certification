@@ -31,7 +31,7 @@ export function UserManagement() {
   );
   const searchResults = useQuery(
     api.adminUsers.searchStudents,
-    searchTerm.length >= 2 ? { searchTerm, limit: 10 } : "skip"
+    searchTerm.length >= 2 ? { searchTerm, limit: 10 } : undefined
   );
 
   const updateCertificationLevel = useMutation(

@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { useRequireAdmin } from "@/hooks/useAdminAuth";
 import { AdminRoleManager } from "@/components/admin/AdminRoleManager";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
+import { AdminGuard } from "@/components/auth/AdminGuard";
+import { useAuthenticatedUser } from "@/components/auth/AuthGuard";
 
-export default function AdminPage() {
-  const adminAuth = useRequireAdmin();
+function AdminPageContent() {
+  const user = useAuthenticatedUser();
   const [isInitializing, setIsInitializing] = useState(false);
   const [message, setMessage] = useState("");
   const [showDatabaseTools, setShowDatabaseTools] = useState(false);
@@ -27,14 +28,12 @@ export default function AdminPage() {
       setMessage(result.message);
 
       // Log admin action
-      if (adminAuth.user) {
-        await logAdminAction({
-          adminClerkId: adminAuth.user.id,
-          action: "initialize_database",
-          resourceType: "database",
-          details: "Database initialization completed",
-        });
-      }
+      await logAdminAction({
+        adminClerkId: user.id,
+        action: "initialize_database",
+        resourceType: "database",
+        details: "Database initialization completed",
+      });
     } catch (error) {
       console.error("Failed to initialize database:", error);
       setMessage(`Failed to initialize database: ${error}`);
@@ -199,5 +198,13 @@ export default function AdminPage() {
         </div>
       </div>
     </AdminLayout>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <AdminGuard>
+      <AdminPageContent />
+    </AdminGuard>
   );
 }

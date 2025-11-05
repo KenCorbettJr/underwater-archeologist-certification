@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { ArtifactGallery } from "@/components/games/ArtifactGallery";
@@ -11,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, Play, Trophy } from "lucide-react";
 import { Artifact, DifficultyLevel } from "@/types";
+import { AuthGuard, useAuthenticatedUser } from "@/components/auth/AuthGuard";
 
 type GameState = "setup" | "playing" | "completed";
 
@@ -34,8 +34,8 @@ interface QuizResult {
   }[];
 }
 
-export default function ArtifactGamePage() {
-  const { user } = useUser();
+function ArtifactGameContent() {
+  const user = useAuthenticatedUser();
   const [gameState, setGameState] = useState<GameState>("setup");
   const [difficulty, setDifficulty] = useState<DifficultyLevel>("beginner");
   const [selectedArtifact, setSelectedArtifact] = useState<Artifact | null>(
@@ -55,10 +55,9 @@ export default function ArtifactGamePage() {
     api.artifactGame.createArtifactGameSession
   );
   const createUser = useMutation(api.users.createUser);
-  const getCurrentUser = useQuery(
-    api.users.getCurrentUser,
-    user ? { clerkId: user.id } : "skip"
-  );
+  const getCurrentUser = useQuery(api.users.getCurrentUser, {
+    clerkId: user.id,
+  });
 
   const handleStartGame = async () => {
     if (!user || !artifacts || artifacts.length === 0) return;
@@ -442,5 +441,12 @@ export default function ArtifactGamePage() {
         )}
       </main>
     </div>
+  );
+}
+export default function ArtifactGamePage() {
+  return (
+    <AuthGuard>
+      <ArtifactGameContent />
+    </AuthGuard>
   );
 }
