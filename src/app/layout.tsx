@@ -33,7 +33,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      signUpFallbackRedirectUrl="/challenges"
+      signInFallbackRedirectUrl="/challenges"
+    >
       <html lang="en">
         <body
           className={`${inter.variable} ${poppins.variable} ${fredoka.variable} font-sans`}
