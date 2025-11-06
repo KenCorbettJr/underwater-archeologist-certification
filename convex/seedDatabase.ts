@@ -63,13 +63,22 @@ export const checkDatabaseStatus = query({
     isInitialized: v.boolean(),
   }),
   handler: async (ctx, _args) => {
-    const artifacts = await ctx.db.query("gameArtifacts").collect();
-    const sites = await ctx.db.query("excavationSites").collect();
+    try {
+      const artifacts = await ctx.db.query("gameArtifacts").collect();
+      const sites = await ctx.db.query("excavationSites").collect();
 
-    return {
-      artifactsCount: artifacts.length,
-      sitesCount: sites.length,
-      isInitialized: artifacts.length > 0 && sites.length > 0,
-    };
+      return {
+        artifactsCount: artifacts.length,
+        sitesCount: sites.length,
+        isInitialized: artifacts.length > 0 && sites.length > 0,
+      };
+    } catch (error) {
+      console.error("Error checking database status:", error);
+      return {
+        artifactsCount: 0,
+        sitesCount: 0,
+        isInitialized: false,
+      };
+    }
   },
 });

@@ -111,20 +111,23 @@ export const getAllUsersForAdmin = query({
     })
   ),
   handler: async (ctx) => {
-    // Note: In a real implementation, you would check admin status here
-    // For now, we'll return all users for admin management
-    const users = await ctx.db.query("users").collect();
+    try {
+      const users = await ctx.db.query("users").collect();
 
-    return users.map((user) => ({
-      _id: user._id,
-      _creationTime: user._creationTime,
-      clerkId: user.clerkId,
-      email: user.email,
-      name: user.name,
-      certificationLevel: user.certificationLevel,
-      totalPoints: user.totalPoints,
-      completedChallenges: user.completedChallenges,
-    }));
+      return users.map((user) => ({
+        _id: user._id,
+        _creationTime: user._creationTime,
+        clerkId: user.clerkId,
+        email: user.email,
+        name: user.name,
+        certificationLevel: user.certificationLevel,
+        totalPoints: user.totalPoints,
+        completedChallenges: user.completedChallenges,
+      }));
+    } catch (error) {
+      console.error("Error fetching users for admin:", error);
+      return [];
+    }
   },
 });
 
@@ -251,12 +254,17 @@ export const getAdminLogs = query({
     })
   ),
   handler: async (ctx, args) => {
-    const limit = args.limit || 50;
+    try {
+      const limit = args.limit || 50;
 
-    return await ctx.db
-      .query("adminLogs")
-      .withIndex("by_timestamp")
-      .order("desc")
-      .take(limit);
+      return await ctx.db
+        .query("adminLogs")
+        .withIndex("by_timestamp")
+        .order("desc")
+        .take(limit);
+    } catch (error) {
+      console.error("Error fetching admin logs:", error);
+      return [];
+    }
   },
 });

@@ -97,13 +97,11 @@ export function AdminDashboard() {
   console.log("AdminDashboard - Analytics:", analytics);
   console.log("AdminDashboard - AdminLogs:", adminLogs);
 
-  // Show loading state if any queries are still loading
-  if (
-    users === undefined ||
-    databaseStatus === undefined ||
-    analytics === undefined ||
-    adminLogs === undefined
-  ) {
+  // Show loading state if critical queries are still loading
+  const isLoading = users === undefined || databaseStatus === undefined;
+  const hasError = users === null || databaseStatus === null;
+
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="text-center py-12">
@@ -117,32 +115,24 @@ export function AdminDashboard() {
             <p>
               Database: {databaseStatus === undefined ? "Loading..." : "Loaded"}
             </p>
-            <p>
-              Analytics: {analytics === undefined ? "Loading..." : "Loaded"}
-            </p>
-            <p>
-              Admin Logs: {adminLogs === undefined ? "Loading..." : "Loaded"}
-            </p>
           </div>
         </div>
       </div>
     );
   }
 
-  // Show error if any queries failed
-  if (
-    users === null ||
-    databaseStatus === null ||
-    analytics === null ||
-    adminLogs === null
-  ) {
+  if (hasError) {
     return (
       <div className="space-y-6">
         <div className="text-center py-12 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-600">Failed to load admin dashboard</p>
           <p className="text-sm text-red-500 mt-2">
-            One or more queries failed. Check Convex connection and permissions.
+            Critical queries failed. Check Convex connection and permissions.
           </p>
+          <div className="text-sm text-gray-500 mt-4 space-y-1">
+            <p>Users: {users === null ? "Failed" : "OK"}</p>
+            <p>Database: {databaseStatus === null ? "Failed" : "OK"}</p>
+          </div>
         </div>
       </div>
     );
@@ -164,8 +154,56 @@ export function AdminDashboard() {
     });
   };
 
+  // Use fallback data if analytics is still loading or failed
+  const safeAnalytics = analytics || {
+    overview: {
+      totalStudents: users?.length || 0,
+      totalGameSessions: 0,
+      totalArtifacts: databaseStatus?.artifactsCount || 0,
+      totalExcavationSites: databaseStatus?.sitesCount || 0,
+      totalChallenges: 0,
+    },
+    studentEngagement: {
+      activeToday: 0,
+      activeThisWeek: 0,
+      activeThisMonth: 0,
+      averageSessionsPerStudent: 0,
+      averageSessionDuration: 0,
+    },
+    contentUsage: {
+      mostPopularGameType: "none",
+      gameTypeStats: [],
+      difficultyDistribution: {
+        beginner: 0,
+        intermediate: 0,
+        advanced: 0,
+      },
+    },
+    certificationStats: {
+      totalCertified: 0,
+      eligibleForCertification: 0,
+      certificationRate: 0,
+      recentCertifications: [],
+    },
+    recentActivity: [],
+  };
+
+  const safeAdminLogs = adminLogs || [];
+
   return (
     <div className="space-y-8">
+      {/* Show loading indicator for optional data */}
+      {(analytics === undefined || adminLogs === undefined) && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center space-x-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            <p className="text-blue-700 text-sm">
+              Loading additional dashboard data...
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Overview Metrics */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-6">
@@ -174,28 +212,28 @@ export function AdminDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           <MetricCard
             title="Total Students"
-            value={analytics.overview.totalStudents}
+            value={safeAnalytics.overview.totalStudents}
             color="blue"
           />
           <MetricCard
             title="Game Sessions"
-            value={analytics.overview.totalGameSessions}
+            value={safeAnalytics.overview.totalGameSessions}
             subtitle="All time"
             color="green"
           />
           <MetricCard
             title="Artifacts"
-            value={analytics.overview.totalArtifacts}
+            value={safeAnalytics.overview.totalArtifacts}
             color="purple"
           />
           <MetricCard
             title="Excavation Sites"
-            value={analytics.overview.totalExcavationSites}
+            value={safeAnalytics.overview.totalExcavationSites}
             color="orange"
           />
           <MetricCard
             title="Challenges"
-            value={analytics.overview.totalChallenges}
+            value={safeAnalytics.overview.totalChallenges}
             color="red"
           />
         </div>
@@ -209,25 +247,25 @@ export function AdminDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <MetricCard
             title="Active Today"
-            value={analytics.studentEngagement.activeToday}
+            value={safeAnalytics.studentEngagement.activeToday}
             subtitle="students"
             color="green"
           />
           <MetricCard
             title="Active This Week"
-            value={analytics.studentEngagement.activeThisWeek}
+            value={safeAnalytics.studentEngagement.activeThisWeek}
             subtitle="students"
             color="blue"
           />
           <MetricCard
             title="Active This Month"
-            value={analytics.studentEngagement.activeThisMonth}
+            value={safeAnalytics.studentEngagement.activeThisMonth}
             subtitle="students"
             color="purple"
           />
           <MetricCard
             title="Avg Session Duration"
-            value={`${analytics.studentEngagement.averageSessionDuration}m`}
+            value={`${safeAnalytics.studentEngagement.averageSessionDuration}m`}
             subtitle="minutes"
             color="orange"
           />
@@ -245,7 +283,7 @@ export function AdminDashboard() {
             <div>
               <p className="text-sm text-gray-600">Most Popular Game</p>
               <p className="text-xl font-semibold text-gray-900">
-                {formatGameType(analytics.contentUsage.mostPopularGameType)}
+                {formatGameType(safeAnalytics.contentUsage.mostPopularGameType)}
               </p>
             </div>
 
@@ -257,29 +295,32 @@ export function AdminDashboard() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Beginner</span>
                   <span className="text-sm font-medium">
-                    {analytics.contentUsage.difficultyDistribution.beginner}
+                    {safeAnalytics.contentUsage.difficultyDistribution.beginner}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Intermediate</span>
                   <span className="text-sm font-medium">
-                    {analytics.contentUsage.difficultyDistribution.intermediate}
+                    {
+                      safeAnalytics.contentUsage.difficultyDistribution
+                        .intermediate
+                    }
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Advanced</span>
                   <span className="text-sm font-medium">
-                    {analytics.contentUsage.difficultyDistribution.advanced}
+                    {safeAnalytics.contentUsage.difficultyDistribution.advanced}
                   </span>
                 </div>
               </div>
             </div>
 
-            {analytics.contentUsage.gameTypeStats.length > 0 && (
+            {safeAnalytics.contentUsage.gameTypeStats.length > 0 && (
               <div>
                 <p className="text-sm text-gray-600 mb-2">Top Game Types</p>
                 <div className="space-y-1">
-                  {analytics.contentUsage.gameTypeStats
+                  {safeAnalytics.contentUsage.gameTypeStats
                     .slice(0, 3)
                     .map((game, index) => (
                       <div
@@ -307,13 +348,13 @@ export function AdminDashboard() {
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-4 bg-green-50 rounded-lg">
                 <p className="text-2xl font-bold text-green-600">
-                  {analytics.certificationStats.totalCertified}
+                  {safeAnalytics.certificationStats.totalCertified}
                 </p>
                 <p className="text-sm text-green-700">Certified</p>
               </div>
               <div className="text-center p-4 bg-blue-50 rounded-lg">
                 <p className="text-2xl font-bold text-blue-600">
-                  {analytics.certificationStats.eligibleForCertification}
+                  {safeAnalytics.certificationStats.eligibleForCertification}
                 </p>
                 <p className="text-sm text-blue-700">Eligible</p>
               </div>
@@ -322,17 +363,18 @@ export function AdminDashboard() {
             <div className="text-center">
               <p className="text-sm text-gray-600">Certification Rate</p>
               <p className="text-3xl font-bold text-purple-600">
-                {analytics.certificationStats.certificationRate}%
+                {safeAnalytics.certificationStats.certificationRate}%
               </p>
             </div>
 
-            {analytics.certificationStats.recentCertifications.length > 0 && (
+            {safeAnalytics.certificationStats.recentCertifications.length >
+              0 && (
               <div>
                 <p className="text-sm text-gray-600 mb-2">
                   Recent Certifications
                 </p>
                 <div className="space-y-1">
-                  {analytics.certificationStats.recentCertifications
+                  {safeAnalytics.certificationStats.recentCertifications
                     .slice(0, 3)
                     .map((cert, index) => (
                       <div key={index} className="text-sm">
@@ -391,19 +433,24 @@ export function AdminDashboard() {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             Recent Student Activity
           </h3>
-          {analytics.recentActivity.length > 0 ? (
+          {safeAnalytics.recentActivity.length > 0 ? (
             <div className="space-y-3">
-              {analytics.recentActivity.slice(0, 8).map((activity, index) => (
-                <div key={index} className="flex items-start space-x-3 text-sm">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <div className="flex-1">
-                    <p className="text-gray-900">{activity.description}</p>
-                    <p className="text-gray-500 text-xs">
-                      {formatTimestamp(activity.timestamp)}
-                    </p>
+              {safeAnalytics.recentActivity
+                .slice(0, 8)
+                .map((activity, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start space-x-3 text-sm"
+                  >
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                    <div className="flex-1">
+                      <p className="text-gray-900">{activity.description}</p>
+                      <p className="text-gray-500 text-xs">
+                        {formatTimestamp(activity.timestamp)}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           ) : (
             <p className="text-gray-500 text-center py-4">No recent activity</p>
@@ -415,9 +462,9 @@ export function AdminDashboard() {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             Recent Admin Actions
           </h3>
-          {adminLogs && adminLogs.length > 0 ? (
+          {safeAdminLogs && safeAdminLogs.length > 0 ? (
             <div className="space-y-3">
-              {adminLogs.slice(0, 8).map((log) => (
+              {safeAdminLogs.slice(0, 8).map((log) => (
                 <div
                   key={log._id}
                   className="flex items-start space-x-3 text-sm"
