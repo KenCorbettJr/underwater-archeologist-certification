@@ -535,7 +535,7 @@ export const updateStudentCertificationLevel = mutation({
       adminClerkId: args.adminClerkId,
       action: "update_certification_level",
       resourceType: "users",
-      resourceId: args.userId,
+      resourceId: args.userId as string,
       details: `Changed certification level from ${oldLevel} to ${args.newLevel} for ${user.name}${args.reason ? `. Reason: ${args.reason}` : ""}`,
     });
 

@@ -159,7 +159,7 @@ export const createExcavationSite = mutation({
       adminClerkId: args.adminClerkId,
       action: "create_excavation_site",
       resourceType: "excavationSites",
-      resourceId: siteId,
+      resourceId: siteId as string,
       details: `Created excavation site: ${args.name}`,
     });
 
@@ -299,7 +299,7 @@ export const updateExcavationSite = mutation({
       adminClerkId,
       action: "update_excavation_site",
       resourceType: "excavationSites",
-      resourceId: siteId,
+      resourceId: siteId as string,
       details: `Updated excavation site: ${existingSite.name}`,
     });
 
@@ -334,7 +334,7 @@ export const deleteExcavationSite = mutation({
       adminClerkId: args.adminClerkId,
       action: "delete_excavation_site",
       resourceType: "excavationSites",
-      resourceId: args.siteId,
+      resourceId: args.siteId as string,
       details: `Deleted excavation site: ${existingSite.name}`,
     });
 
@@ -504,7 +504,7 @@ export const addArtifactsToSite = mutation({
       adminClerkId: args.adminClerkId,
       action: "add_artifacts_to_site",
       resourceType: "excavationSites",
-      resourceId: args.siteId,
+      resourceId: args.siteId as string,
       details: `Added ${args.artifacts.length} artifacts to site: ${site.name}`,
     });
 

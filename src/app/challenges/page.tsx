@@ -4,6 +4,7 @@ import { UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { ProgressWidget } from "@/components/games/ProgressWidget";
 
 function ChallengesPageContent() {
   return (
@@ -172,22 +173,7 @@ function ChallengesPageContent() {
 
         {/* Progress Section */}
         <div className="mt-16 text-center">
-          <div className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-md rounded-3xl p-8 max-w-2xl mx-auto border border-white/30">
-            <h2 className="text-3xl font-bold text-white mb-4 font-fredoka">
-              Your Progress
-            </h2>
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <span className="text-4xl">🌊</span>
-              <div className="flex-1 bg-ocean-800 rounded-full h-4">
-                <div className="bg-gradient-to-r from-sand-400 to-sand-500 h-4 rounded-full w-0"></div>
-              </div>
-              <span className="text-sand-300 font-bold">0%</span>
-            </div>
-            <p className="text-ocean-100">
-              Complete challenges to unlock your certification and join the
-              ranks of junior underwater archaeologists!
-            </p>
-          </div>
+          <ProgressWidget />
         </div>
       </main>
     </div>

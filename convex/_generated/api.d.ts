@@ -22,6 +22,7 @@ import type * as excavationSites from "../excavationSites.js";
 import type * as fileStorage from "../fileStorage.js";
 import type * as gameEngine from "../gameEngine.js";
 import type * as gameSessions from "../gameSessions.js";
+import type * as progressTracking from "../progressTracking.js";
 import type * as seedArtifacts from "../seedArtifacts.js";
 import type * as seedDatabase from "../seedDatabase.js";
 import type * as seedExcavationSites from "../seedExcavationSites.js";
@@ -56,6 +57,7 @@ declare const fullApi: ApiFromModules<{
   fileStorage: typeof fileStorage;
   gameEngine: typeof gameEngine;
   gameSessions: typeof gameSessions;
+  progressTracking: typeof progressTracking;
   seedArtifacts: typeof seedArtifacts;
   seedDatabase: typeof seedDatabase;
   seedExcavationSites: typeof seedExcavationSites;

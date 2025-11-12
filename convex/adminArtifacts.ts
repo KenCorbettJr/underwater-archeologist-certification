@@ -91,7 +91,7 @@ export const createArtifact = mutation({
       adminClerkId: args.adminClerkId,
       action: "create_artifact",
       resourceType: "gameArtifacts",
-      resourceId: artifactId,
+      resourceId: artifactId as string,
       details: `Created artifact: ${args.name}`,
     });
 
@@ -174,7 +174,7 @@ export const updateArtifact = mutation({
       adminClerkId,
       action: "update_artifact",
       resourceType: "gameArtifacts",
-      resourceId: artifactId,
+      resourceId: artifactId as string,
       details: `Updated artifact: ${existingArtifact.name}`,
     });
 
@@ -209,7 +209,7 @@ export const deleteArtifact = mutation({
       adminClerkId: args.adminClerkId,
       action: "delete_artifact",
       resourceType: "gameArtifacts",
-      resourceId: args.artifactId,
+      resourceId: args.artifactId as string,
       details: `Deleted artifact: ${existingArtifact.name}`,
     });
 

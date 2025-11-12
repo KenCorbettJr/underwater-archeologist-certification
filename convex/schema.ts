@@ -231,6 +231,41 @@ export default defineSchema({
     .index("by_verification_code", ["verificationCode"])
     .index("by_issue_date", ["issueDate"]),
 
+  progressHistory: defineTable({
+    userId: v.id("users"),
+    timestamp: v.number(),
+    gameType: v.union(
+      v.literal("artifact_identification"),
+      v.literal("excavation_simulation"),
+      v.literal("site_documentation"),
+      v.literal("historical_timeline"),
+      v.literal("conservation_lab")
+    ),
+    completedLevels: v.number(),
+    totalLevels: v.number(),
+    score: v.number(),
+    timeSpent: v.number(),
+    overallCompletion: v.number(),
+    snapshotData: v.string(), // JSON string of full progress snapshot
+  })
+    .index("by_user_and_timestamp", ["userId", "timestamp"])
+    .index("by_user_and_game_type", ["userId", "gameType"])
+    .index("by_timestamp", ["timestamp"]),
+
+  progressBackups: defineTable({
+    userId: v.id("users"),
+    backupDate: v.number(),
+    backupData: v.string(), // JSON string of complete progress state
+    backupType: v.union(
+      v.literal("automatic"),
+      v.literal("manual"),
+      v.literal("pre_sync")
+    ),
+    deviceInfo: v.optional(v.string()),
+  })
+    .index("by_user_and_date", ["userId", "backupDate"])
+    .index("by_user", ["userId"]),
+
   // Admin system tables
   adminLogs: defineTable({
     adminClerkId: v.string(),

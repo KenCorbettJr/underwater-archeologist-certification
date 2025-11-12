@@ -98,7 +98,7 @@ export const createChallenge = mutation({
       adminClerkId: args.adminClerkId,
       action: "create_challenge",
       resourceType: "challenges",
-      resourceId: challengeId,
+      resourceId: challengeId as string,
       details: `Created challenge: ${args.title}`,
     });
 
@@ -234,7 +234,7 @@ export const updateChallenge = mutation({
       adminClerkId,
       action: "update_challenge",
       resourceType: "challenges",
-      resourceId: challengeId,
+      resourceId: challengeId as string,
       details: `Updated challenge: ${existingChallenge.title}`,
     });
 
@@ -280,7 +280,7 @@ export const deleteChallenge = mutation({
       adminClerkId: args.adminClerkId,
       action: "delete_challenge",
       resourceType: "challenges",
-      resourceId: args.challengeId,
+      resourceId: args.challengeId as string,
       details: `Deleted challenge: ${existingChallenge.title}`,
     });
 
