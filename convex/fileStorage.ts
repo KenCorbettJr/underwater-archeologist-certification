@@ -3,12 +3,20 @@ import { v } from "convex/values";
 
 /**
  * Generate an upload URL for file storage
+ * Requires authentication - any authenticated user can upload
  */
 export const generateUploadUrl = mutation({
   args: {},
   returns: v.string(),
   handler: async (ctx) => {
-    // TODO: Add admin role validation when auth system is complete
+    // Get the authenticated user's identity
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("Authentication required to upload files");
+    }
+
+    // Generate and return the upload URL
     return await ctx.storage.generateUploadUrl();
   },
 });
@@ -50,6 +58,7 @@ export const getFileMetadata = query({
 
 /**
  * Delete a file from storage
+ * Requires authentication
  */
 export const deleteFile = mutation({
   args: {
@@ -57,7 +66,13 @@ export const deleteFile = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    // TODO: Add admin role validation when auth system is complete
+    // Get the authenticated user's identity
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("Authentication required to delete files");
+    }
+
     await ctx.storage.delete(args.storageId);
     return null;
   },
@@ -65,6 +80,7 @@ export const deleteFile = mutation({
 
 /**
  * Admin function to upload and store an image for artifacts
+ * Requires authentication
  */
 export const storeArtifactImage = mutation({
   args: {
@@ -77,7 +93,12 @@ export const storeArtifactImage = mutation({
     url: v.string(),
   }),
   handler: async (ctx, args) => {
-    // TODO: Add admin role validation when auth system is complete
+    // Get the authenticated user's identity
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("Authentication required to store artifact images");
+    }
 
     // Verify the file exists
     const fileMetadata = await ctx.db.system.get(args.storageId);
@@ -105,6 +126,7 @@ export const storeArtifactImage = mutation({
 
 /**
  * Validate image file before upload
+ * Requires authentication
  */
 export const validateImageFile = mutation({
   args: {
@@ -121,6 +143,16 @@ export const validateImageFile = mutation({
     ),
   }),
   handler: async (ctx, args) => {
+    // Get the authenticated user's identity
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      return {
+        isValid: false,
+        error: "Authentication required to validate files",
+      };
+    }
+
     const fileMetadata = await ctx.db.system.get(args.storageId);
 
     if (!fileMetadata) {
