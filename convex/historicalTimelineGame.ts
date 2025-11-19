@@ -10,6 +10,7 @@ interface TimelineGameData {
   matches: CultureMatch[];
   score: number;
   hintsUsed: number;
+  completionPercentage: number;
 }
 
 interface TimelineEvent {
@@ -59,6 +60,7 @@ export const startHistoricalTimelineGame = mutation({
       matches: [],
       score: 0,
       hintsUsed: 0,
+      completionPercentage: 0,
     };
 
     const sessionId = await ctx.db.insert("gameSessions", {
