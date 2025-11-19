@@ -85,6 +85,7 @@ module.exports = {
         "treasure-glow": "treasure-glow 2s ease-in-out infinite",
         "school-swim": "school-swim 15s linear infinite",
         "gradient-shift": "gradient-shift 3s ease infinite",
+        "slide-in-right": "slide-in-right 0.3s ease-out",
       },
       keyframes: {
         wave: {
@@ -133,6 +134,10 @@ module.exports = {
             backgroundPosition: "0% 50%",
             backgroundSize: "400% 400%",
           },
+        },
+        "slide-in-right": {
+          "0%": { transform: "translateX(100%)", opacity: "0" },
+          "100%": { transform: "translateX(0)", opacity: "1" },
         },
       },
     },

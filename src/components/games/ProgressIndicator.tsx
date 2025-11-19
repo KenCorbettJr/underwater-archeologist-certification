@@ -81,29 +81,26 @@ export default function ProgressIndicator({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 space-y-4">
+    <div className="h-full flex flex-col space-y-3">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          📊 Excavation Progress
-        </h3>
-        <div className="text-sm text-gray-600">{siteName}</div>
-      </div>
+      <h3 className="text-base font-semibold flex items-center gap-2 text-white">
+        📊 Progress
+      </h3>
 
       {/* Time remaining */}
-      <div className="p-3 bg-gray-50 rounded-lg">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium">Time Remaining</span>
-          <span className={`text-lg font-bold ${getTimeColor()}`}>
+      <div className="p-2.5 bg-white/10 rounded-lg backdrop-blur-sm">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-xs font-medium text-white">Time Remaining</span>
+          <span className={`text-base font-bold ${getTimeColor()}`}>
             {minutesRemaining}:{secondsRemaining.toString().padStart(2, "0")}
           </span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-white/20 rounded-full h-1.5">
           <div
-            className={`h-2 rounded-full transition-all duration-1000 ${
+            className={`h-1.5 rounded-full transition-all duration-1000 ${
               gameData.timeRemaining < totalTimeSeconds * 0.25
                 ? "bg-red-500"
-                : "bg-blue-500"
+                : "bg-sand-400"
             }`}
             style={{ width: `${Math.max(0, 100 - timeProgress)}%` }}
           />
@@ -111,36 +108,38 @@ export default function ProgressIndicator({
       </div>
 
       {/* Overall progress */}
-      <div className="p-3 bg-blue-50 rounded-lg">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium">Overall Completion</span>
-          <span className="text-lg font-bold text-blue-600">
+      <div className="p-2.5 bg-white/10 rounded-lg backdrop-blur-sm">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-xs font-medium text-white">
+            Overall Completion
+          </span>
+          <span className="text-base font-bold text-sand-300">
             {Math.round(overallProgress)}%
           </span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
+        <div className="w-full bg-white/20 rounded-full h-2">
           <div
-            className={`h-3 rounded-full transition-all duration-500 ${getProgressColor(overallProgress)}`}
+            className={`h-2 rounded-full transition-all duration-500 ${getProgressColor(overallProgress)}`}
             style={{ width: `${overallProgress}%` }}
           />
         </div>
       </div>
 
       {/* Detailed progress metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2">
         {/* Excavation progress */}
-        <div className="text-center p-3 bg-amber-50 rounded-lg">
-          <div className="text-2xl mb-1">🏗️</div>
-          <div className="text-sm font-medium text-gray-700">
-            Site Excavation
+        <div className="text-center p-2 bg-white/10 rounded-lg backdrop-blur-sm">
+          <div className="text-xl mb-0.5">🏗️</div>
+          <div className="text-xs font-medium text-white mb-0.5">
+            Excavation
           </div>
-          <div className="text-lg font-bold text-amber-600">
+          <div className="text-sm font-bold text-sand-300">
             {Math.round(excavationProgress)}%
           </div>
-          <div className="text-xs text-gray-600">
-            {excavatedCells}/{totalCells} cells
+          <div className="text-xs text-ocean-100">
+            {excavatedCells}/{totalCells}
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
+          <div className="w-full bg-white/20 rounded-full h-1 mt-1">
             <div
               className={`h-1 rounded-full transition-all duration-300 ${getProgressColor(excavationProgress)}`}
               style={{ width: `${excavationProgress}%` }}
@@ -149,18 +148,16 @@ export default function ProgressIndicator({
         </div>
 
         {/* Artifact discovery */}
-        <div className="text-center p-3 bg-yellow-50 rounded-lg">
-          <div className="text-2xl mb-1">🏺</div>
-          <div className="text-sm font-medium text-gray-700">
-            Artifacts Found
-          </div>
-          <div className="text-lg font-bold text-yellow-600">
+        <div className="text-center p-2 bg-white/10 rounded-lg backdrop-blur-sm">
+          <div className="text-xl mb-0.5">🏺</div>
+          <div className="text-xs font-medium text-white mb-0.5">Artifacts</div>
+          <div className="text-sm font-bold text-sand-300">
             {Math.round(artifactProgress)}%
           </div>
-          <div className="text-xs text-gray-600">
-            {discoveredArtifacts}/{totalArtifacts} artifacts
+          <div className="text-xs text-ocean-100">
+            {discoveredArtifacts}/{totalArtifacts}
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
+          <div className="w-full bg-white/20 rounded-full h-1 mt-1">
             <div
               className={`h-1 rounded-full transition-all duration-300 ${getProgressColor(artifactProgress)}`}
               style={{ width: `${artifactProgress}%` }}
@@ -169,16 +166,16 @@ export default function ProgressIndicator({
         </div>
 
         {/* Documentation */}
-        <div className="text-center p-3 bg-green-50 rounded-lg">
-          <div className="text-2xl mb-1">📋</div>
-          <div className="text-sm font-medium text-gray-700">Documentation</div>
-          <div className="text-lg font-bold text-green-600">
+        <div className="text-center p-2 bg-white/10 rounded-lg backdrop-blur-sm">
+          <div className="text-xl mb-0.5">📋</div>
+          <div className="text-xs font-medium text-white mb-0.5">Docs</div>
+          <div className="text-sm font-bold text-sand-300">
             {Math.round(documentationProgress)}%
           </div>
-          <div className="text-xs text-gray-600">
-            {completedDocs.length}/{requiredDocs.length} required
+          <div className="text-xs text-ocean-100">
+            {completedDocs.length}/{requiredDocs.length}
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
+          <div className="w-full bg-white/20 rounded-full h-1 mt-1">
             <div
               className={`h-1 rounded-full transition-all duration-300 ${getProgressColor(documentationProgress)}`}
               style={{ width: `${documentationProgress}%` }}
@@ -188,73 +185,56 @@ export default function ProgressIndicator({
       </div>
 
       {/* Protocol compliance */}
-      <div className="p-3 bg-purple-50 rounded-lg">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium">Protocol Compliance</span>
+      <div className="p-2.5 bg-white/10 rounded-lg backdrop-blur-sm">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-xs font-medium text-white">
+            Protocol Compliance
+          </span>
           <span
-            className={`text-lg font-bold ${getComplianceColor(complianceScore)}`}
+            className={`text-sm font-bold ${getComplianceColor(complianceScore)}`}
           >
             {Math.round(complianceScore)}%
           </span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-white/20 rounded-full h-1.5">
           <div
-            className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(complianceScore)}`}
+            className={`h-1.5 rounded-full transition-all duration-300 ${getProgressColor(complianceScore)}`}
             style={{ width: `${complianceScore}%` }}
           />
         </div>
         {totalViolations > 0 && (
-          <div className="mt-2 text-xs text-purple-700">
-            {totalViolations} violation{totalViolations !== 1 ? "s" : ""}{" "}
-            recorded
+          <div className="mt-1 text-xs text-red-300">
+            {totalViolations} violation{totalViolations !== 1 ? "s" : ""}
             {severeViolations > 0 && ` (${severeViolations} severe)`}
           </div>
         )}
       </div>
 
       {/* Quick stats */}
-      <div className="grid grid-cols-2 gap-4 text-sm">
-        <div className="space-y-1">
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="space-y-1 text-ocean-100">
           <div className="flex justify-between">
-            <span className="text-gray-600">Documentation Entries:</span>
-            <span className="font-medium">
+            <span>Docs:</span>
+            <span className="font-medium text-white">
               {gameData.documentationEntries.length}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Protocol Violations:</span>
-            <span className="font-medium">{totalViolations}</span>
+            <span>Violations:</span>
+            <span className="font-medium text-white">{totalViolations}</span>
           </div>
         </div>
-        <div className="space-y-1">
+        <div className="space-y-1 text-ocean-100">
           <div className="flex justify-between">
-            <span className="text-gray-600">Cells Excavated:</span>
-            <span className="font-medium">{excavatedCells}</span>
+            <span>Excavated:</span>
+            <span className="font-medium text-white">{excavatedCells}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Artifacts Discovered:</span>
-            <span className="font-medium">{discoveredArtifacts}</span>
+            <span>Found:</span>
+            <span className="font-medium text-white">
+              {discoveredArtifacts}
+            </span>
           </div>
-        </div>
-      </div>
-
-      {/* Progress indicators */}
-      <div className="flex justify-center space-x-4 text-xs">
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-          <span>Excellent (80%+)</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-          <span>Good (60-79%)</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-          <span>Fair (40-59%)</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-          <span>Needs Work (&lt;40%)</span>
         </div>
       </div>
     </div>

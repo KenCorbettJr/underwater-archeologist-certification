@@ -85,71 +85,71 @@ export default function DocumentationPanel({
       : 0;
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 h-full flex flex-col">
+    <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          📋 Site Documentation
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-base font-semibold flex items-center gap-2 text-white">
+          📋 Documentation
         </h3>
-        <div className="text-sm text-gray-600">{entries.length} entries</div>
+        <div className="text-xs text-ocean-100">{entries.length} entries</div>
       </div>
 
       {/* Documentation progress */}
-      <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-medium">Required Documentation</span>
-          <span className="text-sm">
+      <div className="mb-3 p-2.5 bg-white/10 rounded-lg backdrop-blur-sm">
+        <div className="flex justify-between items-center mb-1.5">
+          <span className="text-xs font-medium text-white">Required</span>
+          <span className="text-xs text-ocean-100">
             {completedRequired}/{requiredEntries.length}
           </span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-white/20 rounded-full h-1.5">
           <div
-            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+            className="bg-sand-400 h-1.5 rounded-full transition-all duration-300"
             style={{ width: `${completionPercentage}%` }}
           />
         </div>
       </div>
 
       {/* Tab navigation */}
-      <div className="flex border-b border-gray-200 mb-4">
+      <div className="flex border-b border-white/20 mb-3">
         <button
           onClick={() => setActiveTab("add")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+          className={`px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${
             activeTab === "add"
-              ? "border-blue-500 text-blue-600"
-              : "border-transparent text-gray-500 hover:text-gray-700"
+              ? "border-sand-400 text-white"
+              : "border-transparent text-ocean-100 hover:text-white"
           }`}
         >
           Add Entry
         </button>
         <button
           onClick={() => setActiveTab("view")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+          className={`px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${
             activeTab === "view"
-              ? "border-blue-500 text-blue-600"
-              : "border-transparent text-gray-500 hover:text-gray-700"
+              ? "border-sand-400 text-white"
+              : "border-transparent text-ocean-100 hover:text-white"
           }`}
         >
-          View Entries ({entries.length})
+          View ({entries.length})
         </button>
       </div>
 
       {/* Tab content */}
       <div className="flex-1 overflow-hidden">
         {activeTab === "add" && (
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             {/* Selected position indicator */}
             {selectedCell && (
-              <div className="p-2 bg-green-50 rounded border border-green-200">
-                <div className="text-sm font-medium text-green-800">
-                  Selected Position: ({selectedCell.x}, {selectedCell.y})
+              <div className="p-2 bg-green-500/20 rounded border border-green-400/30">
+                <div className="text-xs font-medium text-green-300">
+                  Position: ({selectedCell.x}, {selectedCell.y})
                 </div>
               </div>
             )}
 
             {/* Entry type selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-white mb-1">
                 Entry Type
               </label>
               <select
@@ -162,7 +162,7 @@ export default function DocumentationPanel({
                   })
                 }
                 disabled={disabled}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-1.5 text-xs border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-sand-400 focus:border-sand-400"
               >
                 <option value="discovery">🔍 Discovery</option>
                 <option value="measurement">📏 Measurement</option>
@@ -176,8 +176,8 @@ export default function DocumentationPanel({
             {!selectedCell && (
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    X Position
+                  <label className="block text-xs font-medium text-white mb-1">
+                    X
                   </label>
                   <input
                     type="number"
@@ -193,12 +193,12 @@ export default function DocumentationPanel({
                       })
                     }
                     disabled={disabled}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-1.5 text-xs border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-sand-400"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Y Position
+                  <label className="block text-xs font-medium text-white mb-1">
+                    Y
                   </label>
                   <input
                     type="number"
@@ -214,7 +214,7 @@ export default function DocumentationPanel({
                       })
                     }
                     disabled={disabled}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-1.5 text-xs border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-sand-400"
                   />
                 </div>
               </div>
@@ -222,7 +222,7 @@ export default function DocumentationPanel({
 
             {/* Content input */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-white mb-1">
                 Content
               </label>
               <textarea
@@ -232,8 +232,8 @@ export default function DocumentationPanel({
                 }
                 disabled={disabled}
                 placeholder={getPlaceholderText(newEntry.entryType)}
-                rows={4}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                rows={3}
+                className="w-full p-1.5 text-xs border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-sand-400 placeholder-ocean-200"
               />
             </div>
 
@@ -241,59 +241,50 @@ export default function DocumentationPanel({
             <button
               onClick={handleAddEntry}
               disabled={disabled || !newEntry.content.trim()}
-              className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-1.5 px-3 text-xs bg-sand-400 text-sand-900 rounded-md hover:bg-sand-500 disabled:bg-white/20 disabled:text-ocean-200 disabled:cursor-not-allowed transition-colors font-medium"
             >
-              Add Documentation Entry
+              Add Entry
             </button>
           </div>
         )}
 
         {activeTab === "view" && (
-          <div className="space-y-3 overflow-y-auto max-h-96">
+          <div className="space-y-2 overflow-y-auto max-h-80">
             {entries.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                <div className="text-4xl mb-2">📋</div>
-                <div>No documentation entries yet</div>
-                <div className="text-sm">Start by adding your first entry</div>
+              <div className="text-center text-ocean-100 py-6">
+                <div className="text-3xl mb-2">📋</div>
+                <div className="text-xs">No entries yet</div>
               </div>
             ) : (
               entries.map((entry) => (
                 <div
                   key={entry.id}
-                  className="p-3 border border-gray-200 rounded-lg hover:shadow-sm transition-shadow"
+                  className="p-2 border border-white/20 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">
+                  <div className="flex items-start justify-between mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm">
                         {getEntryIcon(entry.entryType)}
                       </span>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${getEntryTypeColor(entry.entryType)}`}
-                      >
+                      <span className="text-xs text-white font-medium">
                         {entry.entryType}
                       </span>
                       {entry.isRequired && (
-                        <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">
+                        <span className="px-1.5 py-0.5 bg-red-500/20 text-red-300 rounded text-xs">
                           Required
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-ocean-200">
                       {formatTimestamp(entry.timestamp)}
                     </div>
                   </div>
 
-                  <div className="text-sm text-gray-600 mb-2">
-                    Position: ({entry.gridPosition.x}, {entry.gridPosition.y})
+                  <div className="text-xs text-ocean-100 mb-1">
+                    ({entry.gridPosition.x}, {entry.gridPosition.y})
                   </div>
 
-                  <div className="text-sm">{entry.content}</div>
-
-                  {entry.artifactId && (
-                    <div className="mt-2 text-xs text-blue-600">
-                      Related to artifact: {entry.artifactId}
-                    </div>
-                  )}
+                  <div className="text-xs text-white">{entry.content}</div>
                 </div>
               ))
             )}
@@ -302,16 +293,12 @@ export default function DocumentationPanel({
       </div>
 
       {/* Documentation guidelines */}
-      <div className="mt-4 p-3 bg-yellow-50 rounded-lg border-t">
-        <h4 className="font-medium text-sm mb-2">
-          📖 Documentation Guidelines
-        </h4>
-        <ul className="text-xs space-y-1 text-yellow-800">
-          <li>• Record all artifact discoveries with precise locations</li>
-          <li>• Take measurements before moving any artifacts</li>
-          <li>• Document excavation methods and conditions</li>
-          <li>• Note any unusual findings or observations</li>
-          <li>• Photograph artifacts in situ before removal</li>
+      <div className="mt-3 p-2 bg-white/10 rounded-lg backdrop-blur-sm border-t border-white/20">
+        <h4 className="font-medium text-xs mb-1 text-white">📖 Guidelines</h4>
+        <ul className="text-xs space-y-0.5 text-ocean-100">
+          <li>• Record discoveries with locations</li>
+          <li>• Measure before moving artifacts</li>
+          <li>• Document methods & conditions</li>
         </ul>
       </div>
     </div>

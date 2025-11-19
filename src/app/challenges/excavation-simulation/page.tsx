@@ -16,6 +16,9 @@ import ExcavationGrid from "../../../components/games/ExcavationGrid";
 import ToolSelector from "../../../components/games/ToolSelector";
 import DocumentationPanel from "../../../components/games/DocumentationPanel";
 import ProgressIndicator from "../../../components/games/ProgressIndicator";
+import { ToolGuideModal } from "../../../components/games/ToolGuideModal";
+import { ExcavationTutorial } from "../../../components/games/ExcavationTutorial";
+import { ToastProvider, useToast } from "../../../components/ui/ToastContainer";
 
 // Import game logic
 import {
@@ -23,9 +26,14 @@ import {
   DocumentationEntry,
   DifficultyLevel,
 } from "../../../types";
+import {
+  getToolSuggestion,
+  formatToolViolationMessage,
+} from "../../../lib/toolSuggestions";
 
 function ExcavationSimulationContent() {
   const user = useAuthenticatedUser();
+  const { showToast } = useToast();
   const [gameSessionId, setGameSessionId] = useState<Id<"gameSessions"> | null>(
     null
   );
@@ -39,6 +47,10 @@ function ExcavationSimulationContent() {
   const [selectedDifficulty, setSelectedDifficulty] =
     useState<DifficultyLevel>("beginner");
   const [isInitializing, setIsInitializing] = useState(false);
+  const [showToolGuide, setShowToolGuide] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [hasSeenViolation, setHasSeenViolation] = useState(false);
+  const [hasSeenTutorial, setHasSeenTutorial] = useState(false);
 
   // Convex queries and mutations
   const gameState = useQuery(
@@ -58,6 +70,7 @@ function ExcavationSimulationContent() {
 
   const startGame = useMutation(api.excavationGame.startExcavationGame);
   const processAction = useMutation(api.excavationGame.processExcavationAction);
+  const changeTool = useMutation(api.excavationGame.changeExcavationTool);
   const addDocumentation = useMutation(
     api.excavationGame.addDocumentationEntry
   );
@@ -73,13 +86,22 @@ function ExcavationSimulationContent() {
     try {
       const result = await initializeDatabase({});
       if (result.success) {
-        alert(`Database initialized successfully! ${result.message}`);
+        showToast(result.message, "success", {
+          title: "Database Initialized",
+          duration: 4000,
+        });
       } else {
-        alert(`Failed to initialize database: ${result.message}`);
+        showToast(result.message, "error", {
+          title: "Initialization Failed",
+          duration: 6000,
+        });
       }
     } catch (error) {
       console.error("Failed to initialize database:", error);
-      alert("Failed to initialize database. Please try again.");
+      showToast("Failed to initialize database. Please try again.", "error", {
+        title: "Error",
+        duration: 6000,
+      });
     } finally {
       setIsInitializing(false);
     }
@@ -96,6 +118,11 @@ function ExcavationSimulationContent() {
       });
       setGameSessionId(sessionId);
       setGameStarted(true);
+
+      // Show tutorial on first game
+      if (!hasSeenTutorial) {
+        setShowTutorial(true);
+      }
     } catch (error) {
       console.error("Failed to start game:", error);
     }
@@ -113,23 +140,94 @@ function ExcavationSimulationContent() {
       });
 
       if (result.discoveries.length > 0) {
-        // Show discovery notification
-        alert(`Discovery! ${result.discoveries.join(", ")}`);
+        // Check if it's a documentation action or artifact discovery
+        const isDocumentation = result.discoveries[0].includes("Documented");
+        const isArtifact = result.discoveries[0].includes(
+          "Artifact discovered"
+        );
+
+        if (isDocumentation) {
+          showToast(
+            `${result.discoveries.join(", ")}\n\n💡 Tip: Add detailed notes in the Documentation Panel to the right!`,
+            "info",
+            {
+              title: "📝 Documented",
+              duration: 5000,
+            }
+          );
+        } else if (isArtifact) {
+          showToast(result.discoveries.join(", "), "success", {
+            title: "🎉 Artifact Discovery!",
+            duration: 5000,
+          });
+        } else {
+          showToast(result.discoveries.join(", "), "success", {
+            title: "✓ Success",
+            duration: 3000,
+          });
+        }
       }
 
       if (result.violations.length > 0) {
-        // Show violation warning
-        alert(`Protocol violation: ${result.violations[0].description}`);
+        const violation = result.violations[0];
+
+        // Get tool suggestion based on violation
+        const suggestion = getToolSuggestion(
+          violation.violationType,
+          gameState.gameData.currentTool.name,
+          {
+            artifactCondition: undefined, // Could be enhanced with actual artifact data
+            visibility: gameState.site.environmentalConditions.visibility,
+            currentStrength:
+              gameState.site.environmentalConditions.currentStrength,
+          }
+        );
+
+        const formatted = formatToolViolationMessage(
+          gameState.gameData.currentTool.name,
+          violation.violationType,
+          suggestion
+        );
+
+        // Show helpful violation warning with suggestions
+        showToast(
+          `${formatted.message}\n\n💡 Tips:\n${formatted.tips.map((tip) => `• ${tip}`).join("\n")}`,
+          "warning",
+          {
+            title: formatted.title,
+            duration: 8000,
+            actionLabel: !hasSeenViolation ? "View Tool Guide" : undefined,
+            onAction: !hasSeenViolation
+              ? () => setShowToolGuide(true)
+              : undefined,
+          }
+        );
+
+        // Mark that user has seen a violation
+        if (!hasSeenViolation) {
+          setHasSeenViolation(true);
+        }
       }
     } catch (error) {
       console.error("Failed to process excavation action:", error);
+      showToast("Failed to process action. Please try again.", "error", {
+        title: "Error",
+        duration: 4000,
+      });
     }
   };
 
-  const handleToolSelect = (tool: ExcavationTool) => {
-    // Tool selection would be handled by updating the game state
-    // For now, we'll just update the local state
-    console.log("Tool selected:", tool);
+  const handleToolSelect = async (tool: ExcavationTool) => {
+    if (!gameSessionId) return;
+
+    try {
+      await changeTool({
+        sessionId: gameSessionId,
+        toolId: tool.id,
+      });
+    } catch (error) {
+      console.error("Failed to change tool:", error);
+    }
   };
 
   const handleAddDocumentation = async (
@@ -157,8 +255,15 @@ function ExcavationSimulationContent() {
     try {
       const report = await completeGame({ sessionId: gameSessionId });
 
-      // Show completion modal with results
-      alert(`Game completed! Overall score: ${report.overallScore}/100`);
+      // Show completion notification with results
+      showToast(
+        `Artifacts Found: ${report.artifactsFound}/${report.totalArtifacts}\nDocumentation: ${report.documentationQuality}%\nProtocol Compliance: ${report.protocolCompliance}%`,
+        "success",
+        {
+          title: `🏆 Excavation Complete! Score: ${report.overallScore}/100`,
+          duration: 10000,
+        }
+      );
 
       // Reset game state
       setGameStarted(false);
@@ -166,6 +271,10 @@ function ExcavationSimulationContent() {
       setSelectedCell(null);
     } catch (error) {
       console.error("Failed to complete game:", error);
+      showToast("Failed to complete game. Please try again.", "error", {
+        title: "Error",
+        duration: 4000,
+      });
     }
   };
 
@@ -414,82 +523,93 @@ function ExcavationSimulationContent() {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 container mx-auto px-6 py-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Site Header */}
-          <div className="text-center mb-6">
-            <h1 className="text-3xl md:text-4xl font-black text-white mb-2 font-fredoka">
-              {gameState.site.name}
-            </h1>
-            <p className="text-ocean-100">
-              {gameState.site.location} • {gameState.site.historicalPeriod}
-            </p>
-          </div>
+      <main className="relative z-10 container mx-auto px-4 py-6 max-w-[1800px]">
+        {/* Site Header */}
+        <div className="text-center mb-6">
+          <h1 className="text-2xl md:text-3xl font-black text-white mb-1 font-fredoka">
+            {gameState.site.name}
+          </h1>
+          <p className="text-sm text-ocean-100">
+            {gameState.site.location} • {gameState.site.historicalPeriod}
+          </p>
+        </div>
 
-          {/* Game interface */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left column - Tools and Progress */}
-            <div className="space-y-6">
-              <div className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/30">
-                <ToolSelector
-                  currentTool={gameState.gameData.currentTool}
-                  onToolSelect={handleToolSelect}
-                  environmentalConditions={
-                    gameState.site.environmentalConditions
-                  }
-                  disabled={gameState.session.status !== "active"}
-                />
-              </div>
-
-              <div className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/30">
-                <ProgressIndicator
-                  gameData={gameState.gameData}
-                  siteArtifacts={gameState.site.siteArtifacts}
-                  siteName={gameState.site.name}
-                  timeLimit={
-                    gameState.site.environmentalConditions.timeConstraints
-                  }
-                />
-              </div>
+        {/* Game interface - Two row layout */}
+        <div className="space-y-4">
+          {/* Top row - Progress and Grid */}
+          <div className="grid grid-cols-1 xl:grid-cols-[350px_1fr] gap-4">
+            {/* Progress Panel */}
+            <div className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/30">
+              <ProgressIndicator
+                gameData={gameState.gameData}
+                siteArtifacts={gameState.site.siteArtifacts}
+                siteName={gameState.site.name}
+                timeLimit={
+                  gameState.site.environmentalConditions.timeConstraints
+                }
+              />
             </div>
 
-            {/* Center column - Excavation Grid */}
-            <div className="flex flex-col items-center">
-              <div className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/30 mb-6">
-                <ExcavationGrid
-                  gridWidth={gameState.site.gridWidth}
-                  gridHeight={gameState.site.gridHeight}
-                  cells={gameState.gameData.excavatedCells}
-                  currentTool={gameState.gameData.currentTool}
-                  siteArtifacts={gameState.site.siteArtifacts}
-                  onCellClick={handleCellClick}
-                  onCellHover={(x, y) => setSelectedCell({ x, y })}
-                  disabled={gameState.session.status !== "active"}
-                />
-              </div>
+            {/* Excavation Grid */}
+            <div className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/30 flex flex-col items-center justify-center">
+              <ExcavationGrid
+                gridWidth={gameState.site.gridWidth}
+                gridHeight={gameState.site.gridHeight}
+                cells={gameState.gameData.excavatedCells}
+                currentTool={gameState.gameData.currentTool}
+                siteArtifacts={gameState.site.siteArtifacts}
+                onCellClick={handleCellClick}
+                onCellHover={(x, y) => setSelectedCell({ x, y })}
+                disabled={gameState.session.status !== "active"}
+              />
 
               {/* Game controls */}
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-2 mt-4 justify-center">
                 <button
                   onClick={handleCompleteGame}
-                  className="px-6 py-3 bg-sand-400 hover:bg-sand-500 text-sand-900 rounded-2xl font-bold transition-colors"
+                  className="px-4 py-2 bg-sand-400 hover:bg-sand-500 text-sand-900 rounded-xl font-bold transition-colors text-sm"
                 >
                   Complete Excavation
+                </button>
+                <button
+                  onClick={() => setShowTutorial(true)}
+                  className="px-4 py-2 border-2 border-blue-400 text-blue-300 hover:bg-blue-400/20 rounded-xl font-bold transition-colors text-sm"
+                >
+                  �️ Tutorial
+                </button>
+                <button
+                  onClick={() => setShowToolGuide(true)}
+                  className="px-4 py-2 border-2 border-sand-400 text-sand-300 hover:bg-sand-400/20 rounded-xl font-bold transition-colors text-sm"
+                >
+                  🛠️ Tool Guide
                 </button>
                 <button
                   onClick={() => {
                     setGameStarted(false);
                     setGameSessionId(null);
                   }}
-                  className="px-6 py-3 border-2 border-white/30 text-white hover:bg-white/10 rounded-2xl font-bold transition-colors"
+                  className="px-4 py-2 border-2 border-white/30 text-white hover:bg-white/10 rounded-xl font-bold transition-colors text-sm"
                 >
                   Exit Game
                 </button>
               </div>
             </div>
+          </div>
 
-            {/* Right column - Documentation */}
-            <div className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/30">
+          {/* Bottom row - Tools and Documentation */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            {/* Tools Panel */}
+            <div className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/30">
+              <ToolSelector
+                currentTool={gameState.gameData.currentTool}
+                onToolSelect={handleToolSelect}
+                environmentalConditions={gameState.site.environmentalConditions}
+                disabled={gameState.session.status !== "active"}
+              />
+            </div>
+
+            {/* Documentation Panel */}
+            <div className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/30">
               <DocumentationPanel
                 entries={gameState.gameData.documentationEntries}
                 selectedCell={selectedCell || undefined}
@@ -500,6 +620,19 @@ function ExcavationSimulationContent() {
           </div>
         </div>
       </main>
+
+      {/* Tutorial Modal */}
+      <ExcavationTutorial
+        isOpen={showTutorial}
+        onClose={() => setShowTutorial(false)}
+        onComplete={() => setHasSeenTutorial(true)}
+      />
+
+      {/* Tool Guide Modal */}
+      <ToolGuideModal
+        isOpen={showToolGuide}
+        onClose={() => setShowToolGuide(false)}
+      />
     </div>
   );
 }
@@ -507,7 +640,9 @@ function ExcavationSimulationContent() {
 export default function ExcavationSimulationPage() {
   return (
     <AuthGuard>
-      <ExcavationSimulationContent />
+      <ToastProvider>
+        <ExcavationSimulationContent />
+      </ToastProvider>
     </AuthGuard>
   );
 }

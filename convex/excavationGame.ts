@@ -312,6 +312,110 @@ export const processExcavationAction = mutation({
 });
 
 /**
+ * Change the current tool in an excavation game
+ */
+export const changeExcavationTool = mutation({
+  args: {
+    sessionId: v.id("gameSessions"),
+    toolId: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || session.status !== "active") {
+      throw new Error("Game session not found or not active");
+    }
+
+    const gameData = JSON.parse(session.gameData);
+
+    // Available tools
+    const availableTools = [
+      {
+        id: "soft_brush",
+        name: "Soft Brush",
+        type: "brush",
+        description: "Gentle cleaning tool for delicate artifacts",
+        effectiveness: 0.8,
+        appropriateFor: ["delicate", "fragile", "detailed_cleaning"],
+      },
+      {
+        id: "hard_brush",
+        name: "Hard Brush",
+        type: "brush",
+        description: "Sturdy brush for removing sediment",
+        effectiveness: 0.6,
+        appropriateFor: [
+          "heavy_sediment",
+          "initial_cleaning",
+          "robust_artifacts",
+        ],
+      },
+      {
+        id: "trowel",
+        name: "Archaeological Trowel",
+        type: "trowel",
+        description: "Precision tool for careful excavation",
+        effectiveness: 0.9,
+        appropriateFor: [
+          "precision_work",
+          "artifact_extraction",
+          "grid_excavation",
+        ],
+      },
+      {
+        id: "measuring_tape",
+        name: "Measuring Tape",
+        type: "measuring_tape",
+        description: "For accurate measurements and grid mapping",
+        effectiveness: 1.0,
+        appropriateFor: ["documentation", "mapping", "measurements"],
+      },
+      {
+        id: "underwater_camera",
+        name: "Underwater Camera",
+        type: "camera",
+        description: "Waterproof camera for site documentation",
+        effectiveness: 1.0,
+        appropriateFor: ["photography", "documentation", "evidence"],
+      },
+      {
+        id: "sieve",
+        name: "Archaeological Sieve",
+        type: "sieve",
+        description: "For separating small artifacts from sediment",
+        effectiveness: 0.7,
+        appropriateFor: [
+          "small_artifacts",
+          "sediment_processing",
+          "thorough_search",
+        ],
+      },
+      {
+        id: "probe",
+        name: "Archaeological Probe",
+        type: "probe",
+        description: "For detecting buried objects without damage",
+        effectiveness: 0.5,
+        appropriateFor: ["detection", "preliminary_survey", "safe_exploration"],
+      },
+    ];
+
+    const newTool = availableTools.find((t) => t.id === args.toolId);
+    if (!newTool) {
+      throw new Error("Invalid tool ID");
+    }
+
+    gameData.currentTool = newTool;
+
+    await ctx.db.patch(args.sessionId, {
+      gameData: JSON.stringify(gameData),
+    });
+
+    return null;
+  },
+});
+
+/**
  * Add documentation entry to excavation game
  */
 export const addDocumentationEntry = mutation({
@@ -534,9 +638,27 @@ export const getExcavationGameState = query({
     }
 
     return {
-      session,
+      session: {
+        _id: session._id,
+        userId: session.userId,
+        gameType: session.gameType,
+        difficulty: session.difficulty,
+        status: session.status,
+        startTime: session.startTime,
+        endTime: session.endTime,
+        currentScore: session.currentScore,
+        maxScore: session.maxScore,
+        completionPercentage: session.completionPercentage,
+      },
       site: {
-        ...site,
+        _id: site._id,
+        name: site.name,
+        location: site.location,
+        historicalPeriod: site.historicalPeriod,
+        description: site.description,
+        gridWidth: site.gridWidth,
+        gridHeight: site.gridHeight,
+        difficulty: site.difficulty,
         environmentalConditions: JSON.parse(site.environmentalConditions),
         siteArtifacts: site.siteArtifacts.map((artifactStr: string) =>
           JSON.parse(artifactStr)
@@ -597,12 +719,18 @@ function processExcavationLogic(
       artifact.gridPosition.x === gridX && artifact.gridPosition.y === gridY
   );
 
+  // Determine action type based on tool and cell state
+  const documentationTools = ["camera", "measuring_tape"];
+  const isDocumentationTool = documentationTools.includes(tool.type);
+  const actionType = isDocumentationTool ? "documentation" : "excavation";
+
   // Validate tool usage
   const toolValidation = validateToolUsage(
     tool,
-    "excavation",
+    actionType,
     conditions,
-    artifactAtPosition?.condition
+    artifactAtPosition?.condition,
+    cell.excavated
   );
 
   if (!toolValidation.isValid) {
@@ -614,6 +742,30 @@ function processExcavationLogic(
       severity: "moderate",
       pointsPenalty: 10,
     });
+  }
+
+  // Handle documentation tools differently
+  if (isDocumentationTool) {
+    // Documentation tools don't excavate, they just record
+    if (cell.excavated) {
+      // Successfully used documentation tool
+      score += 10; // Small bonus for proper documentation
+      const timeUsed = 15; // Documentation is quick
+      newGameData.timeRemaining = Math.max(
+        0,
+        newGameData.timeRemaining - timeUsed
+      );
+
+      return {
+        success: true,
+        newGameData,
+        discoveries: [`Documented cell at position (${gridX}, ${gridY})`],
+        violations,
+        score,
+        timeUsed,
+      };
+    }
+    // If not excavated, validation above will have caught it
   }
 
   // Process excavation based on tool effectiveness and conditions
@@ -664,18 +816,45 @@ function validateToolUsage(
   tool: any,
   actionType: string,
   conditions: any,
-  artifactCondition?: string
+  artifactCondition?: string,
+  cellExcavated?: boolean
 ) {
-  // Check if tool is appropriate for the action
-  const isAppropriate = tool.appropriateFor.some(
-    (use: string) => actionType.includes(use) || use === "general"
-  );
+  // Define which tools are valid for excavation
+  const excavationTools = ["trowel", "brush", "probe"];
+  const documentationTools = ["camera", "measuring_tape"];
 
-  if (!isAppropriate) {
-    return {
-      isValid: false,
-      reason: `${tool.name} is not appropriate for ${actionType}. Consider using a different tool.`,
-    };
+  // For documentation actions, check if cell is excavated
+  if (actionType === "documentation") {
+    if (!cellExcavated) {
+      return {
+        isValid: false,
+        reason: `${tool.name} can only be used on excavated cells. Excavate this cell first with a Trowel or Brush.`,
+      };
+    }
+    // Documentation tools are valid on excavated cells
+    // (environmental conditions checked below)
+  }
+
+  // For basic excavation, allow excavation tools
+  if (actionType === "excavation") {
+    // Documentation tools should not be used for excavation
+    if (documentationTools.includes(tool.type)) {
+      return {
+        isValid: false,
+        reason: `${tool.name} is for documentation, not excavation. Use Archaeological Trowel or Soft Brush to excavate this cell.`,
+      };
+    }
+
+    // Sieve is for processing sediment, not initial excavation
+    if (tool.type === "sieve") {
+      return {
+        isValid: false,
+        reason: `${tool.name} is for processing excavated sediment. Use Archaeological Trowel or Soft Brush to excavate first.`,
+      };
+    }
+
+    // All other excavation tools are valid for basic excavation
+    // (specific conditions checked below)
   }
 
   // Check environmental conditions
@@ -683,15 +862,14 @@ function validateToolUsage(
     return {
       isValid: false,
       reason:
-        "Visibility too low for photography. Improve lighting or wait for better conditions.",
+        "Visibility is too low for photography (${conditions.visibility}%). Improve lighting or wait for better conditions before taking photos.",
     };
   }
 
   if (conditions.currentStrength > 6 && tool.type === "brush") {
     return {
       isValid: false,
-      reason:
-        "Current too strong for brush work. Use a more stable tool or wait for calmer conditions.",
+      reason: `Water current is too strong for brush work (${conditions.currentStrength}/10). Switch to Archaeological Trowel or wait for calmer conditions.`,
     };
   }
 
@@ -700,7 +878,15 @@ function validateToolUsage(
     return {
       isValid: false,
       reason:
-        "Artifact is too fragile for hard brush. Use soft brush or trowel instead.",
+        "This artifact is too fragile for a Hard Brush. Switch to Soft Brush or Archaeological Trowel to avoid damage.",
+    };
+  }
+
+  if (artifactCondition === "fair" && tool.id === "hard_brush") {
+    return {
+      isValid: false,
+      reason:
+        "This artifact is delicate. Use a Soft Brush or Archaeological Trowel for safer excavation.",
     };
   }
 

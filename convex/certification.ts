@@ -1,6 +1,12 @@
-import { query, mutation, internalQuery } from "./_generated/server";
+import {
+  query,
+  mutation,
+  internalQuery,
+  internalMutation,
+} from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
+import { internal } from "./_generated/api";
 
 /**
  * Check if a user is eligible for certification
@@ -90,9 +96,9 @@ export const checkCertificationEligibility = query({
 });
 
 /**
- * Evaluate user for certification
+ * Evaluate user for certification (internal function)
  */
-export const evaluateForCertification = mutation({
+export const evaluateForCertification = internalMutation({
   args: { userId: v.id("users") },
   returns: v.object({
     isEligible: v.boolean(),
@@ -457,7 +463,19 @@ export const generateCertificate = mutation({
     }
 
     // Evaluate eligibility
-    const evaluation = await evaluateForCertification(ctx, {
+    const evaluation: {
+      isEligible: boolean;
+      overallScore: number;
+      gameScores: string;
+      requirements: Array<{
+        gameType: string;
+        requiredScore: number;
+        actualScore: number;
+        met: boolean;
+        description: string;
+      }>;
+      feedback: string[];
+    } = await ctx.runMutation(internal.certification.evaluateForCertification, {
       userId: args.userId,
     });
 

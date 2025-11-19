@@ -50,9 +50,32 @@ export default function ExcavationGrid({
     return cells.find((cell) => cell.x === x && cell.y === y);
   };
 
+  const isToolAppropriate = (x: number, y: number): boolean => {
+    const cell = getCellData(x, y);
+    const toolType = currentTool.type;
+
+    // Documentation tools should only be used on excavated cells
+    if (toolType === "camera" || toolType === "measuring_tape") {
+      return cell?.excavated === true;
+    }
+
+    // Sieve is for processing excavated sediment
+    if (toolType === "sieve") {
+      return cell?.excavated === true && !cell?.containsArtifact;
+    }
+
+    // Excavation tools (trowel, brush, probe) can be used on any unexcavated or partially excavated cell
+    if (toolType === "trowel" || toolType === "brush" || toolType === "probe") {
+      return !cell?.excavated || (cell?.excavationDepth ?? 0) < 1;
+    }
+
+    return true;
+  };
+
   const getCellClass = (x: number, y: number): string => {
     const cell = getCellData(x, y);
     const isHovered = hoveredCell?.x === x && hoveredCell?.y === y;
+    const toolOk = isToolAppropriate(x, y);
 
     let baseClass =
       "relative border border-gray-300 cursor-pointer transition-all duration-200 ";
@@ -62,7 +85,12 @@ export default function ExcavationGrid({
     }
 
     if (isHovered && !disabled) {
-      baseClass += "ring-2 ring-blue-400 ";
+      // Show green ring if tool is appropriate, red if not
+      if (toolOk) {
+        baseClass += "ring-2 ring-green-400 ";
+      } else {
+        baseClass += "ring-2 ring-red-400 ";
+      }
     }
 
     if (!cell) {
@@ -131,6 +159,12 @@ export default function ExcavationGrid({
             <div className="text-2xl opacity-70">
               {getToolIcon(currentTool.type)}
             </div>
+            {/* Tool compatibility indicator */}
+            <div
+              className={`absolute top-1 right-1 w-3 h-3 rounded-full ${
+                isToolAppropriate(x, y) ? "bg-green-500" : "bg-red-500"
+              }`}
+            />
           </div>
         )}
       </div>
@@ -157,26 +191,26 @@ export default function ExcavationGrid({
   );
 
   return (
-    <div className="flex flex-col items-center space-y-4">
+    <div className="flex flex-col items-center space-y-3 w-full">
       {/* Grid legend */}
-      <div className="flex flex-wrap gap-4 text-sm">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-blue-200 border border-gray-300" />
+      <div className="flex flex-wrap gap-3 text-xs text-white">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-blue-200 border border-white/30" />
           <span>Unexcavated</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-amber-100 border border-gray-300" />
-          <span>Partially excavated</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-amber-100 border border-white/30" />
+          <span>Excavated</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-yellow-200 border border-gray-300" />
-          <span>Artifact found</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-yellow-200 border border-white/30" />
+          <span>Artifact</span>
         </div>
       </div>
 
       {/* Grid */}
       <div
-        className="grid border-2 border-gray-400 bg-white shadow-lg"
+        className="grid border-2 border-white/30 bg-white/90 shadow-lg rounded-lg overflow-hidden"
         style={{
           gridTemplateColumns: `repeat(${gridWidth}, ${cellSize}px)`,
           gridTemplateRows: `repeat(${gridHeight}, ${cellSize}px)`,
@@ -199,29 +233,35 @@ export default function ExcavationGrid({
       </div>
 
       {/* Current tool indicator */}
-      <div className="flex items-center gap-2 p-3 bg-gray-100 rounded-lg">
-        <span className="text-lg">{getToolIcon(currentTool.type)}</span>
+      <div className="flex items-center gap-2 p-2 bg-white/10 rounded-lg backdrop-blur-sm">
+        <span className="text-base">{getToolIcon(currentTool.type)}</span>
         <div>
-          <div className="font-medium">{currentTool.name}</div>
-          <div className="text-sm text-gray-600">{currentTool.description}</div>
+          <div className="font-medium text-xs text-white">
+            {currentTool.name}
+          </div>
+          <div className="text-xs text-ocean-100">
+            {currentTool.description}
+          </div>
         </div>
       </div>
 
       {/* Grid statistics */}
-      <div className="grid grid-cols-3 gap-4 text-center text-sm">
-        <div>
-          <div className="font-medium">Total Cells</div>
-          <div className="text-lg">{gridWidth * gridHeight}</div>
+      <div className="grid grid-cols-3 gap-3 text-center text-xs w-full">
+        <div className="bg-white/10 rounded-lg p-2 backdrop-blur-sm">
+          <div className="font-medium text-ocean-100">Total</div>
+          <div className="text-base font-bold text-white">
+            {gridWidth * gridHeight}
+          </div>
         </div>
-        <div>
-          <div className="font-medium">Excavated</div>
-          <div className="text-lg">
+        <div className="bg-white/10 rounded-lg p-2 backdrop-blur-sm">
+          <div className="font-medium text-ocean-100">Excavated</div>
+          <div className="text-base font-bold text-white">
             {cells.filter((c) => c.excavated).length}
           </div>
         </div>
-        <div>
-          <div className="font-medium">Artifacts Found</div>
-          <div className="text-lg">
+        <div className="bg-white/10 rounded-lg p-2 backdrop-blur-sm">
+          <div className="font-medium text-ocean-100">Found</div>
+          <div className="text-base font-bold text-white">
             {cells.filter((c) => c.containsArtifact).length}
           </div>
         </div>

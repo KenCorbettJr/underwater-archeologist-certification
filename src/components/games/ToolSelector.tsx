@@ -63,15 +63,17 @@ export default function ToolSelector({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+    <div className="h-full flex flex-col">
+      <h3 className="text-base font-semibold mb-3 flex items-center gap-2 text-white">
         🧰 Archaeological Tools
       </h3>
 
       {/* Environmental conditions summary */}
-      <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-        <h4 className="font-medium text-sm mb-2">Current Conditions</h4>
-        <div className="grid grid-cols-2 gap-2 text-xs">
+      <div className="mb-3 p-2.5 bg-white/10 rounded-lg backdrop-blur-sm">
+        <h4 className="font-medium text-xs mb-1.5 text-white">
+          Current Conditions
+        </h4>
+        <div className="grid grid-cols-2 gap-1.5 text-xs text-ocean-50">
           <div>Visibility: {environmentalConditions.visibility}%</div>
           <div>Current: {environmentalConditions.currentStrength}/10</div>
           <div>Depth: {environmentalConditions.depth}m</div>
@@ -80,7 +82,7 @@ export default function ToolSelector({
       </div>
 
       {/* Tool grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 mb-3">
         {EXCAVATION_TOOLS.map((tool) => {
           const isSelected = currentTool.id === tool.id;
           const isRecommended = isToolRecommended(tool);
@@ -92,62 +94,39 @@ export default function ToolSelector({
               onClick={() => !disabled && onToolSelect(tool)}
               disabled={disabled}
               className={`
-                relative p-3 rounded-lg border-2 transition-all duration-200 text-left
+                relative p-2 rounded-lg border-2 transition-all duration-200 text-left
                 ${
                   isSelected
-                    ? "border-blue-500 bg-blue-50 shadow-md"
-                    : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
+                    ? "border-sand-400 bg-sand-400/20 shadow-md"
+                    : "border-white/20 bg-white/10 hover:border-white/30 hover:shadow-sm"
                 }
                 ${!isRecommended ? "opacity-75" : ""}
                 ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
               `}
             >
               {/* Tool icon and name */}
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xl">{getToolIcon(tool.type)}</span>
-                <div className="flex-1">
-                  <div className="font-medium text-sm">{tool.name}</div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="text-lg">{getToolIcon(tool.type)}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-xs text-white truncate">
+                    {tool.name}
+                  </div>
                   <div
                     className={`text-xs ${getToolEffectivenessColor(tool.effectiveness)}`}
                   >
-                    Effectiveness: {Math.round(tool.effectiveness * 100)}%
+                    {Math.round(tool.effectiveness * 100)}%
                   </div>
                 </div>
                 {isSelected && (
-                  <div className="w-3 h-3 bg-blue-500 rounded-full" />
+                  <div className="w-2 h-2 bg-sand-400 rounded-full flex-shrink-0" />
                 )}
-              </div>
-
-              {/* Tool description */}
-              <div className="text-xs text-gray-600 mb-2">
-                {tool.description}
-              </div>
-
-              {/* Appropriate uses */}
-              <div className="text-xs">
-                <div className="font-medium text-gray-700 mb-1">Best for:</div>
-                <div className="flex flex-wrap gap-1">
-                  {tool.appropriateFor.slice(0, 2).map((use, index) => (
-                    <span
-                      key={index}
-                      className="px-2 py-1 bg-gray-100 rounded text-xs"
-                    >
-                      {use.replace(/_/g, " ")}
-                    </span>
-                  ))}
-                  {tool.appropriateFor.length > 2 && (
-                    <span className="text-gray-500">
-                      +{tool.appropriateFor.length - 2}
-                    </span>
-                  )}
-                </div>
               </div>
 
               {/* Warning indicator */}
               {warning && (
-                <div className="absolute top-2 right-2">
+                <div className="absolute top-1 right-1">
                   <div
-                    className="w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center text-xs"
+                    className="w-3 h-3 bg-yellow-400 rounded-full flex items-center justify-center text-xs"
                     title={warning}
                   >
                     ⚠️
@@ -157,9 +136,9 @@ export default function ToolSelector({
 
               {/* Not recommended overlay */}
               {!isRecommended && (
-                <div className="absolute inset-0 bg-red-100 bg-opacity-50 rounded-lg flex items-center justify-center">
-                  <div className="text-red-600 text-xs font-medium text-center p-2">
-                    Not recommended for current conditions
+                <div className="absolute inset-0 bg-red-500/50 rounded-lg flex items-center justify-center">
+                  <div className="text-white text-xs font-medium text-center px-1">
+                    Not recommended
                   </div>
                 </div>
               )}
@@ -170,42 +149,24 @@ export default function ToolSelector({
 
       {/* Selected tool details */}
       {currentTool && (
-        <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-          <h4 className="font-medium text-sm mb-2">Selected Tool Details</h4>
-          <div className="text-sm space-y-1">
-            <div>
-              <strong>Name:</strong> {currentTool.name}
+        <div className="p-2.5 bg-white/10 rounded-lg backdrop-blur-sm">
+          <h4 className="font-medium text-xs mb-1.5 text-white">
+            Selected Tool
+          </h4>
+          <div className="text-xs space-y-0.5 text-ocean-50">
+            <div className="flex items-center gap-1.5">
+              <span className="text-base">{getToolIcon(currentTool.type)}</span>
+              <span className="font-medium text-white">{currentTool.name}</span>
             </div>
-            <div>
-              <strong>Type:</strong> {currentTool.type.replace(/_/g, " ")}
-            </div>
-            <div>
-              <strong>Effectiveness:</strong>{" "}
-              {Math.round(currentTool.effectiveness * 100)}%
-            </div>
-            <div>
-              <strong>Description:</strong> {currentTool.description}
-            </div>
+            <div className="text-xs opacity-90">{currentTool.description}</div>
             {getToolWarning(currentTool) && (
-              <div className="text-yellow-700 bg-yellow-100 p-2 rounded text-xs mt-2">
+              <div className="text-yellow-300 bg-yellow-900/30 p-1.5 rounded text-xs mt-1">
                 ⚠️ {getToolWarning(currentTool)}
               </div>
             )}
           </div>
         </div>
       )}
-
-      {/* Tool usage tips */}
-      <div className="mt-4 p-3 bg-green-50 rounded-lg">
-        <h4 className="font-medium text-sm mb-2">💡 Tool Tips</h4>
-        <ul className="text-xs space-y-1 text-green-800">
-          <li>• Use measuring tape and camera for proper documentation</li>
-          <li>• Soft brushes are best for delicate artifacts</li>
-          <li>• Trowels provide precision for careful excavation</li>
-          <li>• Probes help detect artifacts without damage</li>
-          <li>• Sieves catch small artifacts in sediment</li>
-        </ul>
-      </div>
     </div>
   );
 }
