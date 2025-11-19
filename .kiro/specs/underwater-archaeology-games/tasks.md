@@ -130,20 +130,20 @@
     - Test remediation plan effectiveness and retesting workflows
     - _Requirements: 5.1, 5.2, 5.4, 5.5_
 
-- [ ] 7. Develop additional game types
-  - [ ] 7.1 Create site documentation game
+- [x] 7. Develop additional game types
+  - [x] 7.1 Create site documentation game
     - Build SiteMapper component with coordinate system and photo logging
     - Implement ReportBuilder with guided archaeological report creation
     - Add ValidationChecker for real-time documentation accuracy feedback
     - _Requirements: 1.1, 3.2, 3.5_
 
-  - [ ] 7.2 Build historical timeline challenge
+  - [x] 7.2 Build historical timeline challenge
     - Create TimelineInterface with drag-and-drop chronological ordering
     - Implement ContextCards providing historical background information
     - Add CultureMatcher for connecting artifacts to their cultural contexts
     - _Requirements: 2.2, 2.5_
 
-  - [ ] 7.3 Implement conservation lab simulation
+  - [x] 7.3 Implement conservation lab simulation
     - Build ConservationWorkbench virtual lab environment
     - Create ProcessSelector for step-by-step conservation procedures
     - Add ConditionAssessment tools for artifact damage evaluation

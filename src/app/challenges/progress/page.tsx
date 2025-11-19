@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { AuthGuard } from "@/components/auth/AuthGuard";
@@ -24,11 +24,26 @@ function ProgressPageContent() {
   const [newAchievements, setNewAchievements] = useState<Achievement[]>([]);
   const [progressTracker] = useState(() => new ProgressTracker());
 
+  const createUser = useMutation(api.users.createUser);
+
   // Get user from Convex
   const convexUser = useQuery(
     api.users.getUserByClerkId,
     user?.id ? { clerkId: user.id } : "skip"
   );
+
+  // Auto-create user if they don't exist in the database
+  useEffect(() => {
+    if (user && convexUser === null) {
+      createUser({
+        clerkId: user.id,
+        email: user.primaryEmailAddress?.emailAddress || "",
+        name: user.fullName || user.firstName || "Student",
+      }).catch((error) => {
+        console.error("Failed to create user:", error);
+      });
+    }
+  }, [user, convexUser, createUser]);
 
   // Real-time subscriptions to progress data
   const overallProgress = useQuery(

@@ -75,11 +75,26 @@ function ExcavationSimulationContent() {
     api.excavationGame.addDocumentationEntry
   );
   const completeGame = useMutation(api.excavationGame.completeExcavationGame);
+  const createUser = useMutation(api.users.createUser);
 
   // Get current user from database
   const currentUser = useQuery(api.users.getUserByClerkId, {
     clerkId: user.id,
   });
+
+  // Auto-create user if they don't exist in the database
+  useEffect(() => {
+    if (user && currentUser === null) {
+      // User is authenticated but not in database, create them
+      createUser({
+        clerkId: user.id,
+        email: user.primaryEmailAddress?.emailAddress || "",
+        name: user.fullName || user.firstName || "Student",
+      }).catch((error) => {
+        console.error("Failed to create user:", error);
+      });
+    }
+  }, [user, currentUser, createUser]);
 
   const handleInitializeDatabase = async () => {
     setIsInitializing(true);
@@ -454,8 +469,22 @@ function ExcavationSimulationContent() {
                 disabled={!selectedSiteId || !currentUser}
                 className="w-full py-3 px-6 bg-sand-400 hover:bg-sand-500 text-sand-900 rounded-2xl font-medium disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
               >
-                Start Excavation Simulation
+                {!currentUser
+                  ? "Loading user data..."
+                  : !selectedSiteId
+                    ? "Select a site to start"
+                    : "Start Excavation Simulation"}
               </button>
+              {!currentUser && (
+                <p className="text-ocean-100 text-sm mt-2 text-center">
+                  Setting up your account...
+                </p>
+              )}
+              {!selectedSiteId && currentUser && (
+                <p className="text-sand-300 text-sm mt-2 text-center">
+                  👆 Please select an excavation site above
+                </p>
+              )}
             </div>
 
             {/* Game instructions */}
