@@ -156,20 +156,20 @@
     - Test conservation simulation realism and educational value
     - _Requirements: 1.1, 2.2, 3.2_
 
-- [ ] 8. Integrate games with main application
-  - [ ] 8.1 Create games navigation and routing
+- [x] 8. Integrate games with main application
+  - [x] 8.1 Create games navigation and routing
     - Add games section to main navigation with proper routing
     - Implement game selection interface with difficulty indicators
     - Create seamless transitions between different game types
     - _Requirements: 1.1_
 
-  - [ ] 8.2 Integrate with existing authentication system
+  - [x] 8.2 Integrate with existing authentication system
     - Connect games to Clerk authentication for user management
     - Implement role-based access control for different game features
     - Add user profile integration with game progress and achievements
     - _Requirements: 4.3, 5.5_
 
-  - [ ] 8.3 Add responsive design and mobile optimization
+  - [x] 8.3 Add responsive design and mobile optimization
     - Ensure all game components work effectively on tablets and mobile devices
     - Implement touch-friendly interfaces for interactive game elements
     - Add performance optimizations for various device capabilities

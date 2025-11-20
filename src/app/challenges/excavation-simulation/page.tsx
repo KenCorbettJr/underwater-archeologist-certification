@@ -4,12 +4,11 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import {
   AuthGuard,
   useAuthenticatedUser,
 } from "../../../components/auth/AuthGuard";
+import { GameNavigation } from "../../../components/games/GameNavigation";
 
 // Import excavation game components
 import ExcavationGrid from "../../../components/games/ExcavationGrid";
@@ -344,19 +343,7 @@ function ExcavationSimulationContent() {
     return (
       <div className="min-h-screen wave-bg relative overflow-hidden font-poppins">
         {/* Header */}
-        <header className="relative z-10 p-6 flex justify-between items-center backdrop-blur-sm bg-white/5 border-b border-white/10">
-          <Link
-            href="/challenges"
-            className="text-white font-bold text-xl md:text-2xl flex items-center gap-3 font-fredoka hover:text-sand-300 transition-colors"
-          >
-            <ArrowLeft className="w-6 h-6" />
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🤿</span>
-              <span className="hidden sm:inline">Excavation Simulation</span>
-              <span className="sm:hidden">Excavation</span>
-            </div>
-          </Link>
-        </header>
+        <GameNavigation />
 
         {/* Main Content */}
         <main className="relative z-10 container mx-auto px-6 py-8">
@@ -537,19 +524,7 @@ function ExcavationSimulationContent() {
   return (
     <div className="min-h-screen wave-bg relative overflow-hidden font-poppins">
       {/* Header */}
-      <header className="relative z-10 p-6 flex justify-between items-center backdrop-blur-sm bg-white/5 border-b border-white/10">
-        <Link
-          href="/challenges"
-          className="text-white font-bold text-xl md:text-2xl flex items-center gap-3 font-fredoka hover:text-sand-300 transition-colors"
-        >
-          <ArrowLeft className="w-6 h-6" />
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🤿</span>
-            <span className="hidden sm:inline">Excavation Simulation</span>
-            <span className="sm:hidden">Excavation</span>
-          </div>
-        </Link>
-      </header>
+      <GameNavigation />
 
       {/* Main Content */}
       <main className="relative z-10 container mx-auto px-4 py-6 max-w-[1800px]">
