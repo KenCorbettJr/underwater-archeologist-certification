@@ -22,9 +22,9 @@ const fredoka = Fredoka({
 });
 
 export const metadata: Metadata = {
-  title: "Underwater Archeologist Certification",
+  title: "Underwater Learning - Archeology Certification for Kids",
   description:
-    "Learn underwater archeology and become a certified junior underwater archeologist",
+    "Dive into history with Underwater Learning! Learn underwater archeology through interactive games and become a certified junior underwater archeologist.",
 };
 
 export const viewport = {

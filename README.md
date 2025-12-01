@@ -1,4 +1,4 @@
-# Underwater Archeologist Certification Website
+# Underwater Learning
 
 A Next.js application where middle schoolers can learn about underwater archeology and earn certification as junior underwater archeologists.
 
@@ -23,24 +23,28 @@ A Next.js application where middle schoolers can learn about underwater archeolo
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 
 ### Installation
 
 1. Clone the repository
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Set up environment variables:
+
    ```bash
    cp .env.local.example .env.local
    ```
+
    Fill in your API keys and configuration.
 
 4. Set up Convex:
+
    ```bash
    npx convex dev
    ```
@@ -53,7 +57,7 @@ A Next.js application where middle schoolers can learn about underwater archeolo
 ### Available Scripts
 
 - `npm run dev` - Start Next.js + Convex dev servers
-- `npm run emulate` - Run with local Convex emulator  
+- `npm run emulate` - Run with local Convex emulator
 - `npm run build` - Build Next.js application
 - `npm run test` - Run unit tests
 - `npm run cypress:open` - Open Cypress UI for E2E testing

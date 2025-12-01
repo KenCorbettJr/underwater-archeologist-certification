@@ -94,11 +94,8 @@ export default function HomePage() {
             <div className="absolute -top-1 -right-1 w-2 h-2 bg-sand-400 rounded-full animate-pulse"></div>
           </div>
           <div className="flex flex-col">
-            <span className="hidden sm:inline bg-gradient-to-r from-sand-300 via-sand-400 to-sand-500 bg-clip-text text-transparent leading-tight">
-              Underwater Archeology Academy
-            </span>
-            <span className="sm:hidden bg-gradient-to-r from-sand-300 via-sand-400 to-sand-500 bg-clip-text text-transparent">
-              UW Archeology
+            <span className="bg-gradient-to-r from-sand-300 via-sand-400 to-sand-500 bg-clip-text text-transparent leading-tight">
+              Underwater Learning
             </span>
             <span className="text-xs text-ocean-200 font-normal hidden sm:block">
               🌊 Dive Deep, Discover History
@@ -414,8 +411,8 @@ export default function HomePage() {
           <span className="animate-pulse">🏛️</span>
         </div>
         <p className="opacity-70">
-          © 2024 Underwater Archeology Academy • Making history accessible to
-          young explorers
+          © 2024 Underwater Learning • Making history accessible to young
+          explorers
         </p>
       </footer>
     </div>

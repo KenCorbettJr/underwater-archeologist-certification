@@ -31,6 +31,7 @@ import type * as seedArtifacts from "../seedArtifacts.js";
 import type * as seedDatabase from "../seedDatabase.js";
 import type * as seedExcavationSites from "../seedExcavationSites.js";
 import type * as siteDocumentationGame from "../siteDocumentationGame.js";
+import type * as updateArtifactImages from "../updateArtifactImages.js";
 import type * as users from "../users.js";
 
 import type {
@@ -71,6 +72,7 @@ declare const fullApi: ApiFromModules<{
   seedDatabase: typeof seedDatabase;
   seedExcavationSites: typeof seedExcavationSites;
   siteDocumentationGame: typeof siteDocumentationGame;
+  updateArtifactImages: typeof updateArtifactImages;
   users: typeof users;
 }>;
 declare const fullApiWithMounts: typeof fullApi;

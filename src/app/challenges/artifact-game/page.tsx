@@ -180,7 +180,7 @@ function ArtifactGameContent() {
 
   if (!user) {
     return (
-      <div className="min-h-screen wave-bg flex items-center justify-center">
+      <div className="min-h-screen artifact-bg flex items-center justify-center">
         <div className="text-center text-white">
           <h1 className="text-2xl font-bold mb-4">Please sign in to play</h1>
           <p>
@@ -192,7 +192,7 @@ function ArtifactGameContent() {
   }
 
   return (
-    <div className="min-h-screen wave-bg relative overflow-hidden font-poppins">
+    <div className="min-h-screen artifact-bg relative overflow-hidden font-poppins">
       {/* Header */}
       <header className="relative z-10 p-6 flex justify-between items-center backdrop-blur-sm bg-white/5 border-b border-white/10">
         <Link

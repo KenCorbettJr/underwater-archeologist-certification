@@ -168,9 +168,26 @@
 }
 
 .wave-bg {
-  background: linear-gradient(-45deg, #0ea5e9, #0284c7, #0369a1, #075985);
-  background-size: 400% 400%;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 50, 100, 0.85) 0%,
+      rgba(0, 70, 120, 0.9) 50%,
+      rgba(0, 40, 80, 0.95) 100%
+    ),
+    url("https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=1920&q=80")
+      center/cover;
+  background-attachment: fixed;
   animation: wave-gradient 15s ease infinite;
+}
+
+/* Fallback for when image doesn't load */
+@supports not (background-attachment: fixed) {
+  .wave-bg {
+    background: linear-gradient(-45deg, #0ea5e9, #0284c7, #0369a1, #075985);
+    background-size: 400% 400%;
+    animation: wave-gradient 15s ease infinite;
+  }
 }
 
 .simple-wave {
@@ -341,4 +358,19 @@
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+
+/* Artifact Identification Challenge Background */
+.artifact-bg {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(30, 58, 138, 0.85) 0%,
+      rgba(59, 130, 246, 0.8) 50%,
+      rgba(29, 78, 216, 0.9) 100%
+    ),
+    url("https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1920&q=80")
+      center/cover;
+  background-attachment: fixed;
+  animation: wave-gradient 15s ease infinite;
 }

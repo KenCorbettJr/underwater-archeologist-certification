@@ -391,6 +391,7 @@ export const getUserBackups = query({
   returns: v.array(
     v.object({
       _id: v.id("progressBackups"),
+      _creationTime: v.number(),
       userId: v.id("users"),
       backupDate: v.number(),
       backupData: v.string(),
