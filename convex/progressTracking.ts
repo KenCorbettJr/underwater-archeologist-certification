@@ -51,6 +51,7 @@ export const getGameProgress = query({
   returns: v.array(
     v.object({
       _id: v.id("studentProgress"),
+      _creationTime: v.number(),
       userId: v.id("users"),
       gameType: v.union(
         v.literal("artifact_identification"),
