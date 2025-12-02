@@ -1,6 +1,6 @@
-# Underwater Learning
+# Tidal Explorers
 
-A Next.js application where middle schoolers can learn about underwater archeology and earn certification as junior underwater archeologists.
+A Next.js application where middle schoolers can learn about underwater archeology and earn certification as junior underwater archeologists through Tidal Explorers.
 
 ## Features
 

@@ -95,7 +95,7 @@ export default function HomePage() {
           </div>
           <div className="flex flex-col">
             <span className="bg-gradient-to-r from-sand-300 via-sand-400 to-sand-500 bg-clip-text text-transparent leading-tight">
-              Underwater Learning
+              Tidal Explorers
             </span>
             <span className="text-xs text-ocean-200 font-normal hidden sm:block">
               🌊 Dive Deep, Discover History
@@ -411,8 +411,7 @@ export default function HomePage() {
           <span className="animate-pulse">🏛️</span>
         </div>
         <p className="opacity-70">
-          © 2024 Underwater Learning • Making history accessible to young
-          explorers
+          © 2025 Tidal Explorers • Making history accessible to young explorers
         </p>
       </footer>
     </div>

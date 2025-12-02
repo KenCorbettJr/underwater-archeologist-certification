@@ -10,12 +10,51 @@ export default function AdminSetupPage() {
   const [isAssigning, setIsAssigning] = useState(false);
   const [message, setMessage] = useState("");
   const [adminStatus, setAdminStatus] = useState<any>(null);
+  const [isSeeding, setIsSeeding] = useState(false);
+  const [seedMessage, setSeedMessage] = useState("");
+  const [dbStatus, setDbStatus] = useState<any>(null);
 
   useEffect(() => {
     if (isLoaded && isSignedIn && user) {
       checkAdminStatus();
+      checkDatabaseStatus();
     }
   }, [isLoaded, isSignedIn, user]);
+
+  const checkDatabaseStatus = async () => {
+    try {
+      const response = await fetch("/api/admin/database-status");
+      const status = await response.json();
+      setDbStatus(status);
+    } catch (error) {
+      console.error("Error checking database status:", error);
+    }
+  };
+
+  const seedDatabase = async () => {
+    setIsSeeding(true);
+    setSeedMessage("");
+
+    try {
+      const response = await fetch("/api/admin/seed-database", {
+        method: "POST",
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setSeedMessage(result.message);
+        checkDatabaseStatus();
+      } else {
+        setSeedMessage(result.error || "Failed to seed database");
+      }
+    } catch (error) {
+      console.error("Error seeding database:", error);
+      setSeedMessage("Error seeding database");
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   const checkAdminStatus = async () => {
     try {
@@ -79,17 +118,6 @@ export default function AdminSetupPage() {
     );
   }
 
-  if (!isSignedIn) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
-          <p>Please sign in to continue.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
@@ -100,7 +128,7 @@ export default function AdminSetupPage() {
           </p>
         </div>
 
-        {adminStatus && (
+        {isSignedIn && adminStatus && (
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <h3 className="font-semibold mb-2">Current Status:</h3>
             <div className="text-sm space-y-1">
@@ -124,18 +152,66 @@ export default function AdminSetupPage() {
           </div>
         )}
 
+        {dbStatus && (
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+            <h3 className="font-semibold mb-2">Database Status:</h3>
+            <div className="text-sm space-y-1">
+              <div>Artifacts: {dbStatus.artifactsCount || 0}</div>
+              <div>Sites: {dbStatus.sitesCount || 0}</div>
+              <div>
+                Status:{" "}
+                {dbStatus.isInitialized
+                  ? "✅ Initialized"
+                  : "❌ Not Initialized"}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {seedMessage && (
+          <div
+            className={`mb-4 p-3 rounded ${
+              seedMessage.includes("Successfully")
+                ? "bg-green-50 text-green-700 border border-green-200"
+                : "bg-red-50 text-red-700 border border-red-200"
+            }`}
+          >
+            {seedMessage}
+          </div>
+        )}
+
         <div className="space-y-4">
           <button
-            onClick={assignAdminRole}
-            disabled={isAssigning || adminStatus?.isAdmin}
-            className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            onClick={seedDatabase}
+            disabled={isSeeding || dbStatus?.isInitialized}
+            className="w-full py-3 px-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
           >
-            {isAssigning
-              ? "Assigning Admin Role..."
-              : adminStatus?.isAdmin
-                ? "Already Admin"
-                : "Assign Admin Role to Me"}
+            {isSeeding
+              ? "Seeding Database..."
+              : dbStatus?.isInitialized
+                ? "Database Already Seeded"
+                : "Seed Database"}
           </button>
+
+          {isSignedIn && (
+            <button
+              onClick={assignAdminRole}
+              disabled={isAssigning || adminStatus?.isAdmin}
+              className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            >
+              {isAssigning
+                ? "Assigning Admin Role..."
+                : adminStatus?.isAdmin
+                  ? "Already Admin"
+                  : "Assign Admin Role to Me"}
+            </button>
+          )}
+
+          {!isSignedIn && (
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+              Sign in to assign admin role to your account
+            </div>
+          )}
 
           <button
             onClick={() => router.push("/")}

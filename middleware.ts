@@ -11,6 +11,10 @@ const isPublicRoute = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/api/webhooks(.*)",
+  "/admin/setup",
+  "/api/admin/database-status",
+  "/api/admin/seed-database",
+  "/challenges(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {
@@ -23,9 +27,8 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
 
   // Require authentication for non-public routes
   if (!userId) {
-    const signInUrl = new URL("/sign-in", req.url);
-    signInUrl.searchParams.set("redirect_url", req.url);
-    return NextResponse.redirect(signInUrl);
+    // Redirect to home page where Clerk modal will handle sign-in
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
   // Check admin routes

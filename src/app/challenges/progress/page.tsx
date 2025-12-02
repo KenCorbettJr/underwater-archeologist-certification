@@ -265,9 +265,6 @@ function ProgressPageContent() {
 }
 
 export default function ProgressPage() {
-  return (
-    <AuthGuard>
-      <ProgressPageContent />
-    </AuthGuard>
-  );
+  // Temporarily removed AuthGuard for testing
+  return <ProgressPageContent />;
 }

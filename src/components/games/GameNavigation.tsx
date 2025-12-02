@@ -67,7 +67,7 @@ export function GameNavigation({
             </div>
             <div className="flex flex-col">
               <span className="bg-gradient-to-r from-sand-300 via-sand-400 to-sand-500 bg-clip-text text-transparent leading-tight">
-                Underwater Learning
+                Tidal Explorers
               </span>
             </div>
           </Link>
