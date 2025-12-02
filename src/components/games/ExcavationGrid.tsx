@@ -136,11 +136,9 @@ export default function ExcavationGrid({
         )}
 
         {/* Artifact indicator */}
-        {cell?.containsArtifact && (
+        {cell?.containsArtifact && artifact && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-6 h-6 bg-yellow-500 rounded-full border-2 border-yellow-700 flex items-center justify-center">
-              <span className="text-xs font-bold text-yellow-900">A</span>
-            </div>
+            {getArtifactVisual(artifact)}
           </div>
         )}
 
@@ -168,6 +166,253 @@ export default function ExcavationGrid({
           </div>
         )}
       </div>
+    );
+  };
+
+  const getArtifactVisual = (siteArtifact: SiteArtifact) => {
+    // Use position-based seed to create variety in artifact visuals
+    const seed =
+      (siteArtifact.gridPosition.x * 7 + siteArtifact.gridPosition.y * 13) % 7;
+
+    // Pottery/Ceramic artifacts
+    if (seed === 0) {
+      return (
+        <svg
+          width="28"
+          height="28"
+          viewBox="0 0 28 28"
+          className="drop-shadow-md"
+        >
+          <path
+            d="M14 4 L18 8 L18 20 C18 22 16 24 14 24 C12 24 10 22 10 20 L10 8 Z"
+            fill="#8B4513"
+            stroke="#654321"
+            strokeWidth="1.5"
+          />
+          <ellipse cx="14" cy="8" rx="4" ry="2" fill="#A0522D" />
+          <path
+            d="M10 12 Q14 13 18 12"
+            stroke="#654321"
+            strokeWidth="0.8"
+            fill="none"
+          />
+          <path
+            d="M10 16 Q14 17 18 16"
+            stroke="#654321"
+            strokeWidth="0.8"
+            fill="none"
+          />
+        </svg>
+      );
+    }
+
+    // Coins
+    if (seed === 1) {
+      return (
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          className="drop-shadow-md"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+            fill="#DAA520"
+            stroke="#B8860B"
+            strokeWidth="2"
+          />
+          <circle
+            cx="12"
+            cy="12"
+            r="7"
+            fill="none"
+            stroke="#B8860B"
+            strokeWidth="1"
+          />
+          <text
+            x="12"
+            y="15"
+            fontSize="8"
+            fill="#8B6914"
+            textAnchor="middle"
+            fontWeight="bold"
+          >
+            $
+          </text>
+        </svg>
+      );
+    }
+
+    // Tools (axe, knife, blade)
+    if (seed === 2) {
+      return (
+        <svg
+          width="28"
+          height="28"
+          viewBox="0 0 28 28"
+          className="drop-shadow-md"
+        >
+          <path
+            d="M8 20 L12 8 L16 8 L20 20 L18 22 L10 22 Z"
+            fill="#696969"
+            stroke="#2F4F4F"
+            strokeWidth="1.5"
+          />
+          <rect
+            x="11"
+            y="6"
+            width="6"
+            height="3"
+            fill="#8B7355"
+            stroke="#654321"
+            strokeWidth="1"
+          />
+          <path d="M10 12 L18 12" stroke="#2F4F4F" strokeWidth="0.8" />
+        </svg>
+      );
+    }
+
+    // Jewelry/ornaments
+    if (seed === 3) {
+      return (
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          className="drop-shadow-md"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="8"
+            fill="none"
+            stroke="#FFD700"
+            strokeWidth="2.5"
+          />
+          <circle
+            cx="12"
+            cy="8"
+            r="2.5"
+            fill="#FF6347"
+            stroke="#DC143C"
+            strokeWidth="1"
+          />
+          <circle cx="8" cy="14" r="1.5" fill="#4169E1" />
+          <circle cx="16" cy="14" r="1.5" fill="#32CD32" />
+        </svg>
+      );
+    }
+
+    // Statue/figurine
+    if (seed === 4) {
+      return (
+        <svg
+          width="26"
+          height="26"
+          viewBox="0 0 26 26"
+          className="drop-shadow-md"
+        >
+          <ellipse
+            cx="13"
+            cy="8"
+            rx="3"
+            ry="4"
+            fill="#D2B48C"
+            stroke="#8B7355"
+            strokeWidth="1.5"
+          />
+          <rect
+            x="11"
+            y="11"
+            width="4"
+            height="8"
+            fill="#D2B48C"
+            stroke="#8B7355"
+            strokeWidth="1.5"
+          />
+          <path
+            d="M11 14 L8 18"
+            stroke="#8B7355"
+            strokeWidth="1.5"
+            fill="none"
+          />
+          <path
+            d="M15 14 L18 18"
+            stroke="#8B7355"
+            strokeWidth="1.5"
+            fill="none"
+          />
+          <rect
+            x="10"
+            y="19"
+            width="6"
+            height="3"
+            fill="#D2B48C"
+            stroke="#8B7355"
+            strokeWidth="1.5"
+          />
+        </svg>
+      );
+    }
+
+    // Anchor or metal object
+    if (seed === 5) {
+      return (
+        <svg
+          width="26"
+          height="26"
+          viewBox="0 0 26 26"
+          className="drop-shadow-md"
+        >
+          <circle
+            cx="13"
+            cy="8"
+            rx="2"
+            ry="2"
+            fill="#708090"
+            stroke="#2F4F4F"
+            strokeWidth="1.5"
+          />
+          <rect
+            x="12"
+            y="8"
+            width="2"
+            height="10"
+            fill="#708090"
+            stroke="#2F4F4F"
+            strokeWidth="1.5"
+          />
+          <path
+            d="M8 18 L13 18 L18 18"
+            stroke="#708090"
+            strokeWidth="2"
+            fill="none"
+          />
+          <path d="M8 18 L8 22" stroke="#708090" strokeWidth="2" />
+          <path d="M18 18 L18 22" stroke="#708090" strokeWidth="2" />
+        </svg>
+      );
+    }
+
+    // Default artifact (generic shard/fragment)
+    return (
+      <svg
+        width="26"
+        height="26"
+        viewBox="0 0 26 26"
+        className="drop-shadow-md"
+      >
+        <path
+          d="M8 10 L12 6 L18 8 L20 14 L16 20 L10 18 Z"
+          fill="#CD853F"
+          stroke="#8B4513"
+          strokeWidth="1.5"
+        />
+        <path d="M10 12 L16 14" stroke="#8B4513" strokeWidth="0.8" />
+        <path d="M12 16 L14 10" stroke="#8B4513" strokeWidth="0.8" />
+      </svg>
     );
   };
 

@@ -299,6 +299,89 @@ export const getArtifactForAdmin = query({
 });
 
 /**
+ * Admin function to bulk import artifacts from JSON
+ */
+export const bulkImportArtifacts = mutation({
+  args: {
+    items: v.array(
+      v.object({
+        name: v.string(),
+        description: v.string(),
+        historicalPeriod: v.string(),
+        culture: v.string(),
+        dateRange: v.string(),
+        significance: v.string(),
+        imageUrl: v.string(),
+        modelUrl: v.optional(v.string()),
+        discoveryLocation: v.string(),
+        conservationNotes: v.string(),
+        difficulty: v.union(
+          v.literal("beginner"),
+          v.literal("intermediate"),
+          v.literal("advanced")
+        ),
+        category: v.string(),
+      })
+    ),
+  },
+  returns: v.object({
+    successCount: v.number(),
+    failedCount: v.number(),
+    errors: v.array(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    let successCount = 0;
+    let failedCount = 0;
+    const errors: string[] = [];
+
+    for (let i = 0; i < args.items.length; i++) {
+      const item = args.items[i];
+      try {
+        // Validate required fields
+        if (!item.name?.trim()) {
+          throw new Error("Name is required");
+        }
+        if (!item.description?.trim()) {
+          throw new Error("Description is required");
+        }
+        if (!item.imageUrl?.trim()) {
+          throw new Error("Image URL is required");
+        }
+
+        await ctx.db.insert("gameArtifacts", {
+          name: item.name.trim(),
+          description: item.description.trim(),
+          historicalPeriod: item.historicalPeriod.trim(),
+          culture: item.culture.trim(),
+          dateRange: item.dateRange.trim(),
+          significance: item.significance.trim(),
+          imageUrl: item.imageUrl.trim(),
+          modelUrl: item.modelUrl?.trim(),
+          discoveryLocation: item.discoveryLocation.trim(),
+          conservationNotes: item.conservationNotes.trim(),
+          difficulty: item.difficulty,
+          category: item.category.trim(),
+          isActive: true,
+        });
+
+        successCount++;
+      } catch (error: any) {
+        failedCount++;
+        errors.push(
+          `Item ${i + 1} (${item.name || "unnamed"}): ${error.message}`
+        );
+      }
+    }
+
+    return {
+      successCount,
+      failedCount,
+      errors,
+    };
+  },
+});
+
+/**
  * Admin query to get artifact statistics
  */
 export const getArtifactStats = query({

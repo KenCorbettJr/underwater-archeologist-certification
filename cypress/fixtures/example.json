@@ -1,0 +1,38 @@
+{
+  "testUser": {
+    "name": "Test Student",
+    "email": "test@example.com"
+  },
+  "gameTypes": [
+    "Artifact Identification",
+    "Excavation Simulation",
+    "Site Documentation",
+    "Historical Timeline",
+    "Conservation Lab"
+  ],
+  "performanceBenchmarks": {
+    "landingPage": 2000,
+    "challengesPage": 3000,
+    "gamePage": 3000,
+    "progressPage": 3000,
+    "progressUpdate": 30000,
+    "navigation": 2000
+  },
+  "viewports": {
+    "mobile": {
+      "width": 375,
+      "height": 812,
+      "name": "iPhone X"
+    },
+    "tablet": {
+      "width": 768,
+      "height": 1024,
+      "name": "iPad"
+    },
+    "desktop": {
+      "width": 1280,
+      "height": 720,
+      "name": "Desktop"
+    }
+  }
+}

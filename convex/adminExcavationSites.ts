@@ -513,6 +513,110 @@ export const addArtifactsToSite = mutation({
 });
 
 /**
+ * Admin function to bulk import excavation sites from JSON
+ */
+export const bulkImportSites = mutation({
+  args: {
+    items: v.array(
+      v.object({
+        name: v.string(),
+        location: v.string(),
+        historicalPeriod: v.string(),
+        description: v.string(),
+        gridWidth: v.number(),
+        gridHeight: v.number(),
+        difficulty: v.union(
+          v.literal("beginner"),
+          v.literal("intermediate"),
+          v.literal("advanced")
+        ),
+        environmentalConditions: environmentalConditionsValidator,
+        siteArtifacts: v.array(siteArtifactValidator),
+      })
+    ),
+  },
+  returns: v.object({
+    successCount: v.number(),
+    failedCount: v.number(),
+    errors: v.array(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    let successCount = 0;
+    let failedCount = 0;
+    const errors: string[] = [];
+
+    for (let i = 0; i < args.items.length; i++) {
+      const item = args.items[i];
+      try {
+        // Validate required fields
+        if (!item.name?.trim()) {
+          throw new Error("Name is required");
+        }
+        if (!item.location?.trim()) {
+          throw new Error("Location is required");
+        }
+        if (item.gridWidth < 3 || item.gridWidth > 20) {
+          throw new Error("Grid width must be between 3 and 20");
+        }
+        if (item.gridHeight < 3 || item.gridHeight > 20) {
+          throw new Error("Grid height must be between 3 and 20");
+        }
+
+        // Validate artifact positions
+        for (const artifact of item.siteArtifacts) {
+          if (
+            artifact.gridPosition.x < 0 ||
+            artifact.gridPosition.x >= item.gridWidth ||
+            artifact.gridPosition.y < 0 ||
+            artifact.gridPosition.y >= item.gridHeight
+          ) {
+            throw new Error(
+              `Artifact position (${artifact.gridPosition.x}, ${artifact.gridPosition.y}) is outside grid bounds`
+            );
+          }
+
+          // Verify artifact exists
+          const gameArtifact = await ctx.db.get(artifact.artifactId);
+          if (!gameArtifact || !gameArtifact.isActive) {
+            throw new Error(
+              `Referenced artifact ${artifact.artifactId} does not exist or is inactive`
+            );
+          }
+        }
+
+        await ctx.db.insert("excavationSites", {
+          name: item.name.trim(),
+          location: item.location.trim(),
+          historicalPeriod: item.historicalPeriod.trim(),
+          description: item.description.trim(),
+          gridWidth: item.gridWidth,
+          gridHeight: item.gridHeight,
+          difficulty: item.difficulty,
+          environmentalConditions: JSON.stringify(item.environmentalConditions),
+          siteArtifacts: item.siteArtifacts.map((artifact) =>
+            JSON.stringify(artifact)
+          ),
+          isActive: true,
+        });
+
+        successCount++;
+      } catch (error: any) {
+        failedCount++;
+        errors.push(
+          `Item ${i + 1} (${item.name || "unnamed"}): ${error.message}`
+        );
+      }
+    }
+
+    return {
+      successCount,
+      failedCount,
+      errors,
+    };
+  },
+});
+
+/**
  * Admin query to get excavation site statistics
  */
 export const getExcavationSiteStats = query({

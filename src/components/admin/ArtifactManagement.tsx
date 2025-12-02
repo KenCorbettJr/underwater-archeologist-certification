@@ -6,6 +6,7 @@ import { api } from "../../../convex/_generated/api";
 import { useRequireAdmin } from "@/hooks/useAdminAuth";
 import { ArtifactForm } from "./ArtifactForm";
 import { ArtifactList } from "./ArtifactList";
+import { BulkImportModal } from "./BulkImportModal";
 import { Id } from "../../../convex/_generated/dataModel";
 
 export type ArtifactFormData = {
@@ -27,6 +28,7 @@ export type ArtifactFormData = {
 export function ArtifactManagement() {
   const adminAuth = useRequireAdmin();
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showBulkImport, setShowBulkImport] = useState(false);
   const [editingArtifact, setEditingArtifact] =
     useState<Id<"gameArtifacts"> | null>(null);
   const [includeInactive, setIncludeInactive] = useState(false);
@@ -154,6 +156,12 @@ export function ArtifactManagement() {
               <span className="text-sm text-gray-600">Show inactive</span>
             </label>
             <button
+              onClick={() => setShowBulkImport(true)}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Bulk Import
+            </button>
+            <button
               onClick={() => setShowCreateForm(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
@@ -180,6 +188,17 @@ export function ArtifactManagement() {
             }}
           />
         </div>
+      )}
+
+      {/* Bulk Import Modal */}
+      {showBulkImport && (
+        <BulkImportModal
+          type="artifacts"
+          onClose={() => setShowBulkImport(false)}
+          onSuccess={() => {
+            setShowBulkImport(false);
+          }}
+        />
       )}
 
       {/* Artifact List */}

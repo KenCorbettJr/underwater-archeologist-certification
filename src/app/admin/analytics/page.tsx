@@ -344,19 +344,36 @@ export default function AnalyticsPage() {
         {/* Export Options */}
         <AnalyticsCard title="Export & Reports">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <button
+              onClick={() => {
+                window.location.href = "/admin/reports/student-performance";
+              }}
+              className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
               <div className="text-center">
                 <div className="text-2xl mb-2">📊</div>
                 <h4 className="font-medium text-gray-900">
                   Student Progress Report
                 </h4>
                 <p className="text-sm text-gray-600 mt-1">
-                  Export detailed student progress data
+                  View and export detailed student progress data
                 </p>
               </div>
             </button>
 
-            <button className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <button
+              onClick={() => {
+                const now = Date.now();
+                const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+                const report = {
+                  startDate: thirtyDaysAgo,
+                  endDate: now,
+                };
+                console.log("Exporting engagement report:", report);
+                alert("Engagement report export coming soon!");
+              }}
+              className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
               <div className="text-center">
                 <div className="text-2xl mb-2">📈</div>
                 <h4 className="font-medium text-gray-900">
@@ -368,7 +385,13 @@ export default function AnalyticsPage() {
               </div>
             </button>
 
-            <button className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <button
+              onClick={() => {
+                console.log("Exporting content usage report");
+                alert("Content usage report export coming soon!");
+              }}
+              className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
               <div className="text-center">
                 <div className="text-2xl mb-2">🎯</div>
                 <h4 className="font-medium text-gray-900">
@@ -380,9 +403,6 @@ export default function AnalyticsPage() {
               </div>
             </button>
           </div>
-          <p className="text-sm text-gray-500 mt-4 text-center">
-            Export functionality will be available in a future update
-          </p>
         </AnalyticsCard>
       </div>
     </AdminLayout>

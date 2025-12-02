@@ -394,7 +394,7 @@ export function AdminDashboard() {
       {/* Quick Actions */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           <QuickAction
             title="Manage Artifacts"
             description="Add, edit, or remove artifacts from the collection"
@@ -422,6 +422,13 @@ export function AdminDashboard() {
             href="/admin/users"
             icon="👥"
             color="blue"
+          />
+          <QuickAction
+            title="Content Approvals"
+            description="Review and approve pending content changes"
+            href="/admin/approvals"
+            icon="✅"
+            color="green"
           />
         </div>
       </div>

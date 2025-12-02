@@ -278,4 +278,46 @@ export default defineSchema({
     .index("by_admin", ["adminClerkId"])
     .index("by_timestamp", ["timestamp"])
     .index("by_resource_type", ["resourceType"]),
+
+  // Content versioning tables
+  contentVersions: defineTable({
+    resourceType: v.union(
+      v.literal("gameArtifacts"),
+      v.literal("excavationSites"),
+      v.literal("challenges")
+    ),
+    resourceId: v.string(),
+    version: v.number(),
+    contentData: v.string(), // JSON string of the content at this version
+    changeDescription: v.optional(v.string()),
+    changedBy: v.string(), // admin clerk ID
+    timestamp: v.number(),
+    isCurrentVersion: v.boolean(),
+  })
+    .index("by_resource", ["resourceType", "resourceId"])
+    .index("by_resource_and_version", ["resourceType", "resourceId", "version"])
+    .index("by_timestamp", ["timestamp"]),
+
+  contentApprovals: defineTable({
+    resourceType: v.union(
+      v.literal("gameArtifacts"),
+      v.literal("excavationSites"),
+      v.literal("challenges")
+    ),
+    resourceId: v.string(),
+    versionId: v.id("contentVersions"),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("approved"),
+      v.literal("rejected")
+    ),
+    submittedBy: v.string(), // admin clerk ID
+    reviewedBy: v.optional(v.string()), // admin clerk ID
+    submittedAt: v.number(),
+    reviewedAt: v.optional(v.number()),
+    reviewNotes: v.optional(v.string()),
+  })
+    .index("by_status", ["status"])
+    .index("by_resource", ["resourceType", "resourceId"])
+    .index("by_submitted_at", ["submittedAt"]),
 });
