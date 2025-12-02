@@ -642,6 +642,7 @@ export const getExcavationGameState = query({
     return {
       session: {
         _id: session._id,
+        _creationTime: session._creationTime,
         userId: session.userId,
         gameType: session.gameType,
         difficulty: session.difficulty,
@@ -654,6 +655,7 @@ export const getExcavationGameState = query({
       },
       site: {
         _id: site._id,
+        _creationTime: site._creationTime,
         name: site.name,
         location: site.location,
         historicalPeriod: site.historicalPeriod,
