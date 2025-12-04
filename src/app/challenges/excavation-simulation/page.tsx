@@ -250,7 +250,7 @@ function ExcavationSimulationContent() {
     if (!gameSessionId) return;
 
     try {
-      await addDocumentation({
+      const result = await addDocumentation({
         sessionId: gameSessionId,
         entryType: entry.entryType,
         content: entry.content,
@@ -258,8 +258,32 @@ function ExcavationSimulationContent() {
         gridY: entry.gridPosition.y,
         artifactId: entry.artifactId,
       });
+
+      // Show quest completion notifications
+      if (result.questsCompleted.length > 0) {
+        result.questsCompleted.forEach((questTitle) => {
+          showToast(
+            `You've completed all required documentation for this quest!`,
+            "success",
+            {
+              title: `🎉 Quest Complete: ${questTitle}`,
+              duration: 5000,
+            }
+          );
+        });
+      }
+
+      // Show success message for documentation entry
+      showToast("Documentation entry added successfully", "success", {
+        title: "✓ Documented",
+        duration: 2000,
+      });
     } catch (error) {
       console.error("Failed to add documentation:", error);
+      showToast("Failed to add documentation. Please try again.", "error", {
+        title: "Error",
+        duration: 4000,
+      });
     }
   };
 
@@ -296,15 +320,6 @@ function ExcavationSimulationContent() {
       });
     }
   };
-
-  // Check if game should auto-complete (time up or fully excavated)
-  useEffect(() => {
-    if (gameState?.gameData) {
-      if (gameState.gameData.timeRemaining <= 0) {
-        handleCompleteGame();
-      }
-    }
-  }, [gameState?.gameData?.timeRemaining]);
 
   // User is guaranteed to be authenticated by AuthGuard
 
@@ -621,6 +636,7 @@ function ExcavationSimulationContent() {
             <div className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/30">
               <DocumentationPanel
                 entries={gameState.gameData.documentationEntries}
+                quests={gameState.gameData.documentationQuests}
                 selectedCell={selectedCell || undefined}
                 onAddEntry={handleAddDocumentation}
                 disabled={gameState.session.status !== "active"}

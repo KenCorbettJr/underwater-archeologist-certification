@@ -112,7 +112,6 @@ export function initializeExcavationGame(
     discoveredArtifacts: [],
     excavatedCells,
     documentationEntries: [],
-    timeRemaining: timeLimit * 60, // convert minutes to seconds
     protocolViolations: [],
   };
 }
@@ -259,10 +258,6 @@ export function processExcavationAction(
   newGameData.excavatedCells[cellIndex] = cell;
   newGameData.protocolViolations.push(...violations);
 
-  // Deduct time based on action complexity
-  const timeUsed = calculateTimeUsage(tool, conditions, cell.excavationDepth);
-  newGameData.timeRemaining = Math.max(0, newGameData.timeRemaining - timeUsed);
-
   return {
     success: true,
     newGameData,
@@ -380,29 +375,6 @@ function calculateDiscoveryScore(
   if (conditions.depth > 20) baseScore += 10;
 
   return baseScore;
-}
-
-/**
- * Calculate time usage for an action
- */
-function calculateTimeUsage(
-  tool: ExcavationTool,
-  conditions: EnvironmentalConditions,
-  excavationDepth: number
-): number {
-  let baseTime = 30; // 30 seconds base time
-
-  // Adjust for tool efficiency
-  baseTime *= 2 - tool.effectiveness; // More effective tools are faster
-
-  // Adjust for conditions
-  if (conditions.visibility < 50) baseTime *= 1.5;
-  if (conditions.currentStrength > 5) baseTime *= 1.3;
-
-  // Deeper excavation takes more time
-  baseTime *= 1 + excavationDepth;
-
-  return Math.round(baseTime);
 }
 
 /**

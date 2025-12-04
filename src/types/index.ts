@@ -90,7 +90,7 @@ export interface ExcavationGameData {
   discoveredArtifacts: Id<"gameArtifacts">[];
   excavatedCells: GridCell[];
   documentationEntries: DocumentationEntry[];
-  timeRemaining: number; // in seconds
+  documentationQuests?: DocumentationQuest[];
   protocolViolations: ProtocolViolation[];
 }
 
@@ -122,6 +122,22 @@ export interface DocumentationEntry {
   artifactId?: Id<"gameArtifacts">;
   isRequired: boolean;
   isComplete: boolean;
+}
+
+export interface DocumentationQuest {
+  id: string;
+  title: string;
+  description: string;
+  questType:
+    | "take_photos"
+    | "record_measurements"
+    | "document_artifacts"
+    | "complete_grid_survey"
+    | "write_field_notes";
+  targetCount: number;
+  currentCount: number;
+  isComplete: boolean;
+  reward: number;
 }
 
 export interface ProtocolViolation {

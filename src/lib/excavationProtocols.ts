@@ -350,14 +350,6 @@ export function getProtocolGuidance(
 ): string[] {
   const guidance: string[] = [];
 
-  // Time-based guidance
-  const timeProgress = (45 * 60 - gameData.timeRemaining) / (45 * 60);
-  if (timeProgress > 0.7) {
-    guidance.push(
-      "⏰ Time is running short - focus on completing documentation"
-    );
-  }
-
   // Environmental guidance
   if (environmentalConditions.visibility < 50) {
     guidance.push("👁️ Low visibility - use probe to locate artifacts safely");

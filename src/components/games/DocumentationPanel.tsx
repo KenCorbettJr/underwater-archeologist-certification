@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { DocumentationEntry, GridCell } from "../../types";
+import { DocumentationEntry, DocumentationQuest, GridCell } from "../../types";
 import { Id } from "../../../convex/_generated/dataModel";
 
 interface DocumentationPanelProps {
   entries: DocumentationEntry[];
+  quests?: DocumentationQuest[];
   selectedCell?: { x: number; y: number };
   onAddEntry: (entry: Omit<DocumentationEntry, "id" | "timestamp">) => void;
   disabled?: boolean;
@@ -13,11 +14,14 @@ interface DocumentationPanelProps {
 
 export default function DocumentationPanel({
   entries,
+  quests = [],
   selectedCell,
   onAddEntry,
   disabled = false,
 }: DocumentationPanelProps) {
-  const [activeTab, setActiveTab] = useState<"add" | "view">("add");
+  const [activeTab, setActiveTab] = useState<"quests" | "add" | "view">(
+    "quests"
+  );
   const [newEntry, setNewEntry] = useState({
     entryType: "note" as DocumentationEntry["entryType"],
     content: "",
@@ -113,6 +117,17 @@ export default function DocumentationPanel({
       {/* Tab navigation */}
       <div className="flex border-b border-white/20 mb-3">
         <button
+          onClick={() => setActiveTab("quests")}
+          className={`px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${
+            activeTab === "quests"
+              ? "border-sand-400 text-white"
+              : "border-transparent text-ocean-100 hover:text-white"
+          }`}
+        >
+          📋 Quests ({quests.filter((q) => q.isComplete).length}/{quests.length}
+          )
+        </button>
+        <button
           onClick={() => setActiveTab("add")}
           className={`px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${
             activeTab === "add"
@@ -136,6 +151,74 @@ export default function DocumentationPanel({
 
       {/* Tab content */}
       <div className="flex-1 overflow-hidden">
+        {activeTab === "quests" && (
+          <div className="space-y-2 overflow-y-auto max-h-80">
+            {quests.length === 0 ? (
+              <div className="text-center text-ocean-100 py-6">
+                <div className="text-3xl mb-2">📋</div>
+                <div className="text-xs">No documentation quests available</div>
+              </div>
+            ) : (
+              quests.map((quest) => (
+                <div
+                  key={quest.id}
+                  className={`p-3 border rounded-lg transition-all ${
+                    quest.isComplete
+                      ? "border-green-400/50 bg-green-500/10"
+                      : "border-white/20 bg-white/5"
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">
+                        {quest.isComplete ? "✅" : "📝"}
+                      </span>
+                      <div>
+                        <h4 className="text-sm font-semibold text-white">
+                          {quest.title}
+                        </h4>
+                        <p className="text-xs text-ocean-100 mt-0.5">
+                          {quest.description}
+                        </p>
+                      </div>
+                    </div>
+                    {quest.isComplete && (
+                      <span className="text-xs px-2 py-1 bg-green-500/20 text-green-300 rounded">
+                        +{quest.reward}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="mt-2">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs text-ocean-100">Progress</span>
+                      <span className="text-xs text-white font-medium">
+                        {quest.currentCount}/{quest.targetCount}
+                      </span>
+                    </div>
+                    <div className="w-full bg-white/20 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          quest.isComplete ? "bg-green-400" : "bg-sand-400"
+                        }`}
+                        style={{
+                          width: `${Math.min(100, (quest.currentCount / quest.targetCount) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Quest type hint */}
+                  <div className="mt-2 text-xs text-ocean-200">
+                    {getQuestTypeHint(quest.questType)}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
         {activeTab === "add" && (
           <div className="space-y-2.5">
             {/* Selected position indicator */}
@@ -317,4 +400,16 @@ function getPlaceholderText(
     sample: "Describe sample taken, location, purpose, and storage method...",
   };
   return placeholders[entryType] || "Enter your documentation here...";
+}
+
+function getQuestTypeHint(questType: DocumentationQuest["questType"]): string {
+  const hints = {
+    take_photos: "💡 Use the Camera tool and add 'photo' entries",
+    record_measurements:
+      "💡 Use the Measuring Tape and add 'measurement' entries",
+    document_artifacts: "💡 Add 'discovery' entries for found artifacts",
+    complete_grid_survey: "💡 Excavate cells across the grid systematically",
+    write_field_notes: "💡 Add 'note' entries with observations",
+  };
+  return hints[questType] || "";
 }

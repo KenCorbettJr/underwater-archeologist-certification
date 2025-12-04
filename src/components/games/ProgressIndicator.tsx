@@ -38,13 +38,6 @@ export default function ProgressIndicator({
       ? (completedDocs.length / requiredDocs.length) * 100
       : 0;
 
-  // Time calculations
-  const totalTimeSeconds = timeLimit * 60;
-  const elapsedSeconds = totalTimeSeconds - gameData.timeRemaining;
-  const timeProgress = (elapsedSeconds / totalTimeSeconds) * 100;
-  const minutesRemaining = Math.floor(gameData.timeRemaining / 60);
-  const secondsRemaining = gameData.timeRemaining % 60;
-
   // Overall completion
   const overallProgress =
     (excavationProgress + artifactProgress + documentationProgress) / 3;
@@ -66,14 +59,6 @@ export default function ProgressIndicator({
     return "bg-red-500";
   };
 
-  const getTimeColor = (): string => {
-    if (gameData.timeRemaining > totalTimeSeconds * 0.5)
-      return "text-green-600";
-    if (gameData.timeRemaining > totalTimeSeconds * 0.25)
-      return "text-yellow-600";
-    return "text-red-600";
-  };
-
   const getComplianceColor = (score: number): string => {
     if (score >= 90) return "text-green-600";
     if (score >= 70) return "text-yellow-600";
@@ -86,26 +71,6 @@ export default function ProgressIndicator({
       <h3 className="text-base font-semibold flex items-center gap-2 text-white">
         📊 Progress
       </h3>
-
-      {/* Time remaining */}
-      <div className="p-2.5 bg-white/10 rounded-lg backdrop-blur-sm">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-xs font-medium text-white">Time Remaining</span>
-          <span className={`text-base font-bold ${getTimeColor()}`}>
-            {minutesRemaining}:{secondsRemaining.toString().padStart(2, "0")}
-          </span>
-        </div>
-        <div className="w-full bg-white/20 rounded-full h-1.5">
-          <div
-            className={`h-1.5 rounded-full transition-all duration-1000 ${
-              gameData.timeRemaining < totalTimeSeconds * 0.25
-                ? "bg-red-500"
-                : "bg-sand-400"
-            }`}
-            style={{ width: `${Math.max(0, 100 - timeProgress)}%` }}
-          />
-        </div>
-      </div>
 
       {/* Overall progress */}
       <div className="p-2.5 bg-white/10 rounded-lg backdrop-blur-sm">

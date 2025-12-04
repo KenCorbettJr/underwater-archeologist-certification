@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { GridCell, ExcavationTool, SiteArtifact } from "../../types";
 
 interface ExcavationGridProps {
@@ -28,6 +28,60 @@ export default function ExcavationGrid({
     x: number;
     y: number;
   } | null>(null);
+  const [isHolding, setIsHolding] = useState(false);
+  const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const currentCellRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (holdIntervalRef.current) {
+        clearInterval(holdIntervalRef.current);
+      }
+    };
+  }, []);
+
+  const startHolding = useCallback(
+    (x: number, y: number) => {
+      if (disabled) return;
+
+      currentCellRef.current = { x, y };
+      setIsHolding(true);
+
+      // Immediate first click
+      onCellClick(x, y);
+
+      // Start interval for continuous clicks
+      holdIntervalRef.current = setInterval(() => {
+        if (currentCellRef.current) {
+          onCellClick(currentCellRef.current.x, currentCellRef.current.y);
+        }
+      }, 150); // Fire every 150ms while holding
+    },
+    [onCellClick, disabled]
+  );
+
+  const stopHolding = useCallback(() => {
+    setIsHolding(false);
+    currentCellRef.current = null;
+    if (holdIntervalRef.current) {
+      clearInterval(holdIntervalRef.current);
+      holdIntervalRef.current = null;
+    }
+  }, []);
+
+  const handleCellEnter = useCallback(
+    (x: number, y: number) => {
+      setHoveredCell({ x, y });
+      onCellHover?.(x, y);
+
+      // If holding and entering a new cell, update the current cell
+      if (isHolding && currentCellRef.current) {
+        currentCellRef.current = { x, y };
+      }
+    },
+    [onCellHover, isHolding]
+  );
 
   const handleCellClick = useCallback(
     (x: number, y: number) => {
@@ -36,14 +90,6 @@ export default function ExcavationGrid({
       }
     },
     [onCellClick, disabled]
-  );
-
-  const handleCellHover = useCallback(
-    (x: number, y: number) => {
-      setHoveredCell({ x, y });
-      onCellHover?.(x, y);
-    },
-    [onCellHover]
   );
 
   const getCellData = (x: number, y: number): GridCell | undefined => {
@@ -93,6 +139,15 @@ export default function ExcavationGrid({
       }
     }
 
+    // Highlight cell being held
+    if (
+      isHolding &&
+      currentCellRef.current?.x === x &&
+      currentCellRef.current?.y === y
+    ) {
+      baseClass += "ring-4 ring-blue-500 animate-pulse ";
+    }
+
     if (!cell) {
       return baseClass + "bg-blue-100 ";
     }
@@ -129,7 +184,7 @@ export default function ExcavationGrid({
             className="absolute bottom-0 left-0 bg-amber-600 transition-all duration-300"
             style={{
               width: "100%",
-              height: `${cell.excavationDepth * 100}%`,
+              height: `${Math.min(cell.excavationDepth, 1) * 100}%`,
               opacity: 0.3,
             }}
           />
@@ -455,11 +510,15 @@ export default function ExcavationGrid({
 
       {/* Grid */}
       <div
-        className="grid border-2 border-white/30 bg-white/90 shadow-lg rounded-lg overflow-hidden"
+        className="grid border-2 border-white/30 bg-white/90 shadow-lg rounded-lg overflow-hidden select-none"
         style={{
           gridTemplateColumns: `repeat(${gridWidth}, ${cellSize}px)`,
           gridTemplateRows: `repeat(${gridHeight}, ${cellSize}px)`,
         }}
+        onMouseUp={stopHolding}
+        onMouseLeave={stopHolding}
+        onTouchEnd={stopHolding}
+        onTouchCancel={stopHolding}
       >
         {Array.from({ length: gridHeight }, (_, y) =>
           Array.from({ length: gridWidth }, (_, x) => (
@@ -468,8 +527,29 @@ export default function ExcavationGrid({
               className={getCellClass(x, y)}
               style={{ width: cellSize, height: cellSize }}
               onClick={() => handleCellClick(x, y)}
-              onMouseEnter={() => handleCellHover(x, y)}
+              onMouseDown={() => startHolding(x, y)}
+              onMouseEnter={() => handleCellEnter(x, y)}
               onMouseLeave={() => setHoveredCell(null)}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                startHolding(x, y);
+              }}
+              onTouchMove={(e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const element = document.elementFromPoint(
+                  touch.clientX,
+                  touch.clientY
+                );
+                if (element) {
+                  const cellKey = element.getAttribute("data-cell");
+                  if (cellKey) {
+                    const [newX, newY] = cellKey.split("-").map(Number);
+                    handleCellEnter(newX, newY);
+                  }
+                }
+              }}
+              data-cell={`${x}-${y}`}
             >
               {getCellContent(x, y)}
             </div>

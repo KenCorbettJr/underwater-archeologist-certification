@@ -49,6 +49,23 @@ const documentationEntryValidator = v.object({
   isComplete: v.boolean(),
 });
 
+const documentationQuestValidator = v.object({
+  id: v.string(),
+  title: v.string(),
+  description: v.string(),
+  questType: v.union(
+    v.literal("take_photos"),
+    v.literal("record_measurements"),
+    v.literal("document_artifacts"),
+    v.literal("complete_grid_survey"),
+    v.literal("write_field_notes")
+  ),
+  targetCount: v.number(),
+  currentCount: v.number(),
+  isComplete: v.boolean(),
+  reward: v.number(),
+});
+
 const protocolViolationValidator = v.object({
   id: v.string(),
   timestamp: v.number(),
@@ -92,6 +109,18 @@ export const startExcavationGame = mutation({
     // Parse environmental conditions
     const environmentalConditions = JSON.parse(site.environmentalConditions);
 
+    // Parse original site artifacts to get artifact IDs and conditions
+    const originalArtifacts = site.siteArtifacts.map((artifactStr: string) =>
+      JSON.parse(artifactStr)
+    );
+
+    // Randomize artifact positions
+    const randomizedArtifacts = randomizeArtifactPositions(
+      originalArtifacts,
+      site.gridWidth,
+      site.gridHeight
+    );
+
     // Initialize game data
     const excavatedCells = [];
     for (let x = 0; x < site.gridWidth; x++) {
@@ -108,6 +137,13 @@ export const startExcavationGame = mutation({
       }
     }
 
+    // Initialize documentation quests based on difficulty
+    const documentationQuests = initializeDocumentationQuests(
+      args.difficulty,
+      randomizedArtifacts.length,
+      site.gridWidth * site.gridHeight
+    );
+
     const gameData = {
       siteId: args.siteId,
       currentTool: {
@@ -121,8 +157,10 @@ export const startExcavationGame = mutation({
       discoveredArtifacts: [],
       excavatedCells,
       documentationEntries: [],
-      timeRemaining: environmentalConditions.timeConstraints * 60, // convert to seconds
+      documentationQuests,
       protocolViolations: [],
+      // Store randomized artifact positions in game data
+      randomizedArtifacts,
     };
 
     // Create game session
@@ -158,7 +196,6 @@ export const processExcavationAction = mutation({
     discoveries: v.array(v.string()),
     violations: v.array(protocolViolationValidator),
     score: v.number(),
-    timeUsed: v.number(),
   }),
   handler: async (ctx, args) => {
     // Get game session
@@ -176,9 +213,10 @@ export const processExcavationAction = mutation({
       throw new Error("Excavation site not found");
     }
 
-    const siteArtifacts = site.siteArtifacts.map((artifactStr: string) =>
-      JSON.parse(artifactStr)
-    );
+    // Use randomized artifacts from game data if available, otherwise fall back to site artifacts
+    const siteArtifacts =
+      gameData.randomizedArtifacts ||
+      site.siteArtifacts.map((artifactStr: string) => JSON.parse(artifactStr));
     const environmentalConditions = JSON.parse(site.environmentalConditions);
 
     // Find the tool being used
@@ -306,7 +344,6 @@ export const processExcavationAction = mutation({
       discoveries: result.discoveries,
       violations: result.violations,
       score: result.score,
-      timeUsed: result.timeUsed,
     };
   },
 });
@@ -433,7 +470,11 @@ export const addDocumentationEntry = mutation({
     gridY: v.number(),
     artifactId: v.optional(v.id("gameArtifacts")),
   },
-  returns: v.null(),
+  returns: v.object({
+    success: v.boolean(),
+    questsCompleted: v.array(v.string()),
+    bonusScore: v.number(),
+  }),
   handler: async (ctx, args) => {
     const session = await ctx.db.get(args.sessionId);
     if (!session || session.status !== "active") {
@@ -457,11 +498,56 @@ export const addDocumentationEntry = mutation({
 
     gameData.documentationEntries.push(newEntry);
 
+    // Update documentation quests
+    const questsCompleted: string[] = [];
+    let bonusScore = 0;
+
+    if (gameData.documentationQuests) {
+      for (const quest of gameData.documentationQuests) {
+        if (quest.isComplete) continue;
+
+        let shouldIncrement = false;
+
+        switch (quest.questType) {
+          case "take_photos":
+            if (args.entryType === "photo") shouldIncrement = true;
+            break;
+          case "record_measurements":
+            if (args.entryType === "measurement") shouldIncrement = true;
+            break;
+          case "document_artifacts":
+            if (args.entryType === "discovery" && args.artifactId)
+              shouldIncrement = true;
+            break;
+          case "write_field_notes":
+            if (args.entryType === "note") shouldIncrement = true;
+            break;
+        }
+
+        if (shouldIncrement) {
+          quest.currentCount++;
+          if (quest.currentCount >= quest.targetCount && !quest.isComplete) {
+            quest.isComplete = true;
+            questsCompleted.push(quest.title);
+            bonusScore += quest.reward;
+          }
+        }
+      }
+    }
+
+    // Update score if quests were completed
+    const newScore = session.currentScore + bonusScore;
+
     await ctx.db.patch(args.sessionId, {
+      currentScore: newScore,
       gameData: JSON.stringify(gameData),
     });
 
-    return null;
+    return {
+      success: true,
+      questsCompleted,
+      bonusScore,
+    };
   },
 });
 
@@ -494,9 +580,10 @@ export const completeExcavationGame = mutation({
       throw new Error("Excavation site not found");
     }
 
-    const siteArtifacts = site.siteArtifacts.map((artifactStr: string) =>
-      JSON.parse(artifactStr)
-    );
+    // Use randomized artifacts from game data if available
+    const siteArtifacts =
+      gameData.randomizedArtifacts ||
+      site.siteArtifacts.map((artifactStr: string) => JSON.parse(artifactStr));
 
     // Generate site report
     const report = generateSiteReport(gameData, site.name, siteArtifacts);
@@ -621,7 +708,7 @@ export const getExcavationGameState = query({
           })
         ),
         documentationEntries: v.array(documentationEntryValidator),
-        timeRemaining: v.number(),
+        documentationQuests: v.optional(v.array(documentationQuestValidator)),
         protocolViolations: v.array(protocolViolationValidator),
       }),
     }),
@@ -664,9 +751,12 @@ export const getExcavationGameState = query({
         gridHeight: site.gridHeight,
         difficulty: site.difficulty,
         environmentalConditions: JSON.parse(site.environmentalConditions),
-        siteArtifacts: site.siteArtifacts.map((artifactStr: string) =>
-          JSON.parse(artifactStr)
-        ),
+        // Use randomized artifacts from game data if available
+        siteArtifacts:
+          gameData.randomizedArtifacts ||
+          site.siteArtifacts.map((artifactStr: string) =>
+            JSON.parse(artifactStr)
+          ),
       },
       gameData: {
         ...gameData,
@@ -681,6 +771,7 @@ export const getExcavationGameState = query({
           notes: cell.notes || undefined,
         })),
         documentationEntries: gameData.documentationEntries || [],
+        documentationQuests: gameData.documentationQuests || [],
         protocolViolations: gameData.protocolViolations || [],
       },
     };
@@ -688,6 +779,69 @@ export const getExcavationGameState = query({
 });
 
 // Helper functions
+
+/**
+ * Randomize artifact positions on the grid
+ * Ensures no two artifacts occupy the same position
+ */
+function randomizeArtifactPositions(
+  artifacts: any[],
+  gridWidth: number,
+  gridHeight: number
+): any[] {
+  const usedPositions = new Set<string>();
+  const randomizedArtifacts = [];
+
+  for (const artifact of artifacts) {
+    let position;
+    let attempts = 0;
+    const maxAttempts = 100;
+
+    // Find a unique random position
+    do {
+      const x = Math.floor(Math.random() * gridWidth);
+      const y = Math.floor(Math.random() * gridHeight);
+      position = { x, y };
+      attempts++;
+
+      if (attempts >= maxAttempts) {
+        // Fallback: use any available position
+        for (let fallbackX = 0; fallbackX < gridWidth; fallbackX++) {
+          for (let fallbackY = 0; fallbackY < gridHeight; fallbackY++) {
+            const key = `${fallbackX},${fallbackY}`;
+            if (!usedPositions.has(key)) {
+              position = { x: fallbackX, y: fallbackY };
+              break;
+            }
+          }
+          if (position) break;
+        }
+        break;
+      }
+    } while (usedPositions.has(`${position.x},${position.y}`));
+
+    usedPositions.add(`${position.x},${position.y}`);
+
+    // Randomize depth slightly (keep within reasonable range)
+    const baseDepth = artifact.depth || 0.5;
+    const depthVariation = (Math.random() - 0.5) * 0.3; // ±0.15
+    const randomizedDepth = Math.max(
+      0.3,
+      Math.min(0.95, baseDepth + depthVariation)
+    );
+
+    randomizedArtifacts.push({
+      artifactId: artifact.artifactId,
+      gridPosition: position,
+      depth: randomizedDepth,
+      isDiscovered: false,
+      condition: artifact.condition,
+    });
+  }
+
+  return randomizedArtifacts;
+}
+
 function processExcavationLogic(
   gameData: any,
   gridX: number,
@@ -754,12 +908,6 @@ function processExcavationLogic(
     if (cell.excavated) {
       // Successfully used documentation tool
       score += 10; // Small bonus for proper documentation
-      const timeUsed = 15; // Documentation is quick
-      // Infinite time mode - don't decrease time
-      // newGameData.timeRemaining = Math.max(
-      //   0,
-      //   newGameData.timeRemaining - timeUsed
-      // );
 
       return {
         success: true,
@@ -767,7 +915,6 @@ function processExcavationLogic(
         discoveries: [`Documented cell at position (${gridX}, ${gridY})`],
         violations,
         score,
-        timeUsed,
       };
     }
     // If not excavated, validation above will have caught it
@@ -803,10 +950,23 @@ function processExcavationLogic(
   newGameData.excavatedCells[cellIndex] = cell;
   newGameData.protocolViolations.push(...violations);
 
-  // Deduct time based on action complexity
-  const timeUsed = calculateTimeUsage(tool, conditions, cell.excavationDepth);
-  // Infinite time mode - don't decrease time
-  // newGameData.timeRemaining = Math.max(0, newGameData.timeRemaining - timeUsed);
+  // Update grid survey quest if it exists
+  if (newGameData.documentationQuests && cell.excavated) {
+    const gridSurveyQuest = newGameData.documentationQuests.find(
+      (q: any) => q.questType === "complete_grid_survey"
+    );
+    if (gridSurveyQuest && !gridSurveyQuest.isComplete) {
+      const excavatedCount = newGameData.excavatedCells.filter(
+        (c: any) => c.excavated
+      ).length;
+      gridSurveyQuest.currentCount = excavatedCount;
+      if (gridSurveyQuest.currentCount >= gridSurveyQuest.targetCount) {
+        gridSurveyQuest.isComplete = true;
+        score += gridSurveyQuest.reward;
+        discoveries.push(`Quest completed: ${gridSurveyQuest.title}!`);
+      }
+    }
+  }
 
   return {
     success: true,
@@ -814,7 +974,6 @@ function processExcavationLogic(
     discoveries,
     violations,
     score,
-    timeUsed,
   };
 }
 
@@ -1142,4 +1301,82 @@ async function updateUserProgress(
       achievements: [],
     });
   }
+}
+
+/**
+ * Initialize documentation quests based on difficulty level
+ */
+function initializeDocumentationQuests(
+  difficulty: "beginner" | "intermediate" | "advanced",
+  artifactCount: number,
+  totalCells: number
+): any[] {
+  const quests = [];
+
+  // Base quests for all difficulty levels
+  quests.push({
+    id: "quest_photos",
+    title: "Site Photography",
+    description: "Take photos to document the excavation site",
+    questType: "take_photos",
+    targetCount:
+      difficulty === "beginner" ? 3 : difficulty === "intermediate" ? 5 : 8,
+    currentCount: 0,
+    isComplete: false,
+    reward: 50,
+  });
+
+  quests.push({
+    id: "quest_measurements",
+    title: "Record Measurements",
+    description: "Take accurate measurements of artifacts and features",
+    questType: "record_measurements",
+    targetCount:
+      difficulty === "beginner" ? 4 : difficulty === "intermediate" ? 6 : 10,
+    currentCount: 0,
+    isComplete: false,
+    reward: 50,
+  });
+
+  quests.push({
+    id: "quest_artifacts",
+    title: "Document Artifacts",
+    description: "Create detailed documentation for discovered artifacts",
+    questType: "document_artifacts",
+    targetCount: Math.max(1, Math.floor(artifactCount * 0.5)),
+    currentCount: 0,
+    isComplete: false,
+    reward: 100,
+  });
+
+  // Additional quests for intermediate and advanced
+  if (difficulty === "intermediate" || difficulty === "advanced") {
+    quests.push({
+      id: "quest_field_notes",
+      title: "Field Notes",
+      description:
+        "Write detailed field notes about excavation methods and observations",
+      questType: "write_field_notes",
+      targetCount: difficulty === "intermediate" ? 3 : 5,
+      currentCount: 0,
+      isComplete: false,
+      reward: 75,
+    });
+  }
+
+  // Advanced only quest
+  if (difficulty === "advanced") {
+    quests.push({
+      id: "quest_grid_survey",
+      title: "Complete Grid Survey",
+      description: "Document at least 50% of the excavation grid",
+      questType: "complete_grid_survey",
+      targetCount: Math.floor(totalCells * 0.5),
+      currentCount: 0,
+      isComplete: false,
+      reward: 150,
+    });
+  }
+
+  return quests;
 }
