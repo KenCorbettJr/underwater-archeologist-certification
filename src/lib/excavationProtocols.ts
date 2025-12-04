@@ -377,7 +377,7 @@ export function getProtocolGuidance(
   ).length;
   const progress = excavatedCells / totalCells;
 
-  if (progress < 0.3 && timeProgress > 0.5) {
+  if (progress < 0.3) {
     guidance.push("🏗️ Increase excavation pace to cover more area");
   }
 
