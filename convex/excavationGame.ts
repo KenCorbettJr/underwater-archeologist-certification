@@ -710,6 +710,25 @@ export const getExcavationGameState = query({
         documentationEntries: v.array(documentationEntryValidator),
         documentationQuests: v.optional(v.array(documentationQuestValidator)),
         protocolViolations: v.array(protocolViolationValidator),
+        randomizedArtifacts: v.optional(
+          v.array(
+            v.object({
+              artifactId: v.id("gameArtifacts"),
+              gridPosition: v.object({
+                x: v.number(),
+                y: v.number(),
+              }),
+              depth: v.number(),
+              isDiscovered: v.boolean(),
+              condition: v.union(
+                v.literal("excellent"),
+                v.literal("good"),
+                v.literal("fair"),
+                v.literal("poor")
+              ),
+            })
+          )
+        ),
       }),
     }),
     v.null()
