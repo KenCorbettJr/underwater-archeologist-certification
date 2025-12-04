@@ -122,8 +122,10 @@ function HistoricalTimelineGameContent() {
     if (!sessionId) return;
     try {
       const result = await completeGame({ sessionId });
+      // 70% minimum for historical timeline
+      const passed = result.finalScore >= 70;
       alert(
-        `Game completed!\nFinal Score: ${result.finalScore}\nAccuracy: ${result.accuracy}%`
+        `${passed ? "🏆" : "😢"} Game completed!\nFinal Score: ${result.finalScore}\nAccuracy: ${result.accuracy}%${!passed ? "\nKeep practicing to improve your score!" : ""}`
       );
     } catch (error) {
       console.error("Failed to complete game:", error);

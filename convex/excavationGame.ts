@@ -755,10 +755,11 @@ function processExcavationLogic(
       // Successfully used documentation tool
       score += 10; // Small bonus for proper documentation
       const timeUsed = 15; // Documentation is quick
-      newGameData.timeRemaining = Math.max(
-        0,
-        newGameData.timeRemaining - timeUsed
-      );
+      // Infinite time mode - don't decrease time
+      // newGameData.timeRemaining = Math.max(
+      //   0,
+      //   newGameData.timeRemaining - timeUsed
+      // );
 
       return {
         success: true,
@@ -804,7 +805,8 @@ function processExcavationLogic(
 
   // Deduct time based on action complexity
   const timeUsed = calculateTimeUsage(tool, conditions, cell.excavationDepth);
-  newGameData.timeRemaining = Math.max(0, newGameData.timeRemaining - timeUsed);
+  // Infinite time mode - don't decrease time
+  // newGameData.timeRemaining = Math.max(0, newGameData.timeRemaining - timeUsed);
 
   return {
     success: true,

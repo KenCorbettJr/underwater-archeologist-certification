@@ -343,6 +343,125 @@ export const updateReportSection = mutation({
   },
 });
 
+// Inspect a grid position to get information about what's there
+export const inspectGridPosition = query({
+  args: {
+    sessionId: v.id("gameSessions"),
+    gridPosition: v.object({ x: v.number(), y: v.number() }),
+  },
+  returns: v.object({
+    position: v.object({ x: v.number(), y: v.number() }),
+    description: v.string(),
+    features: v.array(v.string()),
+    suggestedMeasurements: v.array(v.string()),
+    suggestedPhotoAngles: v.array(v.string()),
+    artifactsPresent: v.array(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) {
+      throw new Error("Game session not found");
+    }
+
+    const gameData: SiteDocumentationGameData = JSON.parse(session.gameData);
+    const site = await ctx.db.get(gameData.siteId);
+    if (!site) {
+      throw new Error("Excavation site not found");
+    }
+
+    // Generate contextual information based on grid position
+    const { x, y } = args.gridPosition;
+    const features: string[] = [];
+    const suggestedMeasurements: string[] = [];
+    const suggestedPhotoAngles: string[] = [];
+    const artifactsPresent: string[] = [];
+
+    // Determine what's at this location based on position
+    // This creates a more realistic excavation site with different features
+    const isEdge =
+      x === 0 ||
+      y === 0 ||
+      x === site.gridWidth - 1 ||
+      y === site.gridHeight - 1;
+    const isCenter =
+      Math.abs(x - site.gridWidth / 2) < 2 &&
+      Math.abs(y - site.gridHeight / 2) < 2;
+    const isCorner =
+      (x === 0 || x === site.gridWidth - 1) &&
+      (y === 0 || y === site.gridHeight - 1);
+
+    let description = "";
+
+    if (isCorner) {
+      description =
+        "Corner section of the excavation site. Relatively undisturbed area with clear stratigraphy.";
+      features.push(
+        "Clear soil layers",
+        "Minimal disturbance",
+        "Good reference point"
+      );
+      suggestedMeasurements.push("depth", "distance");
+      suggestedPhotoAngles.push("overhead", "side");
+    } else if (isCenter) {
+      description =
+        "Central excavation area. High concentration of artifacts and features. Primary focus of investigation.";
+      features.push(
+        "Dense artifact scatter",
+        "Possible structural remains",
+        "Multiple soil contexts"
+      );
+      suggestedMeasurements.push("length", "width", "depth");
+      suggestedPhotoAngles.push("overhead", "45-degree", "detail");
+
+      // Add some artifacts in the center
+      if (site.siteArtifacts && site.siteArtifacts.length > 0) {
+        const artifactIndex = (x + y) % site.siteArtifacts.length;
+        artifactsPresent.push(site.siteArtifacts[artifactIndex]);
+      }
+    } else if (isEdge) {
+      description =
+        "Edge of excavation unit. Shows profile of soil layers and site boundaries.";
+      features.push("Visible stratigraphy", "Site boundary", "Profile wall");
+      suggestedMeasurements.push("depth", "distance");
+      suggestedPhotoAngles.push("side", "detail");
+    } else {
+      description =
+        "Mid-section of excavation area. Mixed deposits with moderate artifact density.";
+      features.push(
+        "Mixed soil deposits",
+        "Scattered artifacts",
+        "Moderate disturbance"
+      );
+      suggestedMeasurements.push("length", "width");
+      suggestedPhotoAngles.push("overhead", "45-degree");
+
+      // Occasional artifacts in mid-sections
+      if (
+        (x + y) % 3 === 0 &&
+        site.siteArtifacts &&
+        site.siteArtifacts.length > 0
+      ) {
+        const artifactIndex = (x * y) % site.siteArtifacts.length;
+        artifactsPresent.push(site.siteArtifacts[artifactIndex]);
+      }
+    }
+
+    // Add environmental context
+    if (site.environmentalConditions) {
+      features.push(`Conditions: ${site.environmentalConditions}`);
+    }
+
+    return {
+      position: args.gridPosition,
+      description,
+      features,
+      suggestedMeasurements,
+      suggestedPhotoAngles,
+      artifactsPresent,
+    };
+  },
+});
+
 // Get current game state
 export const getSiteDocumentationGame = query({
   args: {

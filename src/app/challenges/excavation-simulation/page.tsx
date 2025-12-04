@@ -269,12 +269,17 @@ function ExcavationSimulationContent() {
     try {
       const report = await completeGame({ sessionId: gameSessionId });
 
+      // Determine if passed (75% minimum for excavation)
+      const passed = report.overallScore >= 75;
+
       // Show completion notification with results
       showToast(
         `Artifacts Found: ${report.artifactsFound}/${report.totalArtifacts}\nDocumentation: ${report.documentationQuality}%\nProtocol Compliance: ${report.protocolCompliance}%`,
-        "success",
+        passed ? "success" : "error",
         {
-          title: `🏆 Excavation Complete! Score: ${report.overallScore}/100`,
+          title: passed
+            ? `🏆 Excavation Complete! Score: ${report.overallScore}/100`
+            : `😢 Excavation Complete. Score: ${report.overallScore}/100`,
           duration: 10000,
         }
       );

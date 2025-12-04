@@ -128,7 +128,11 @@ function ConservationLabGameContent() {
     if (!sessionId) return;
     try {
       const result = await completeGame({ sessionId });
-      alert(`${result.feedback}\nFinal Score: ${result.finalScore}`);
+      // 70% minimum for conservation lab (site documentation requirement)
+      const passed = result.finalScore >= 70;
+      alert(
+        `${passed ? "🏆" : "😢"} ${result.feedback}\nFinal Score: ${result.finalScore}/100${!passed ? "\nKeep practicing to improve your score!" : ""}`
+      );
     } catch (error) {
       console.error("Failed to complete game:", error);
     }

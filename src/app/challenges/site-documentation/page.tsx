@@ -138,7 +138,11 @@ function SiteDocumentationGameContent() {
     try {
       const result = await completeGame({ sessionId });
       if (result.success) {
-        alert(`Game completed! Final score: ${result.finalScore}`);
+        // 70% minimum for site documentation
+        const passed = result.finalScore >= 70;
+        alert(
+          `${passed ? "🏆" : "😢"} Game completed! Final score: ${result.finalScore}${!passed ? "\nKeep practicing to improve your score!" : ""}`
+        );
       } else {
         alert(`Not ready to complete:\n${result.feedback.join("\n")}`);
       }
@@ -180,26 +184,71 @@ function SiteDocumentationGameContent() {
 
     return (
       <div className="min-h-screen wave-bg flex items-center justify-center p-6">
-        <div className="bg-white/10 backdrop-blur-md rounded-3xl p-12 text-center max-w-2xl">
-          <div className="text-8xl mb-6">📏</div>
-          <h1 className="text-5xl font-bold text-white mb-4 font-fredoka">
+        <div className="bg-white/10 backdrop-blur-md rounded-3xl p-12 max-w-3xl">
+          <div className="text-8xl mb-6 text-center">📏</div>
+          <h1 className="text-5xl font-bold text-white mb-4 font-fredoka text-center">
             Site Documentation Game
           </h1>
-          <p className="text-xl text-white/80 mb-8">
+          <p className="text-xl text-white/80 mb-8 text-center">
             Learn proper archaeological site documentation techniques including
             photography, measurements, and report writing.
           </p>
-          <Button
-            onClick={handleStartGame}
-            className="bg-sand-400 hover:bg-sand-500 text-sand-900 text-xl px-8 py-6"
-          >
-            Start Documentation Challenge
-          </Button>
-          <Link href="/challenges">
-            <Button className="ml-4 bg-white/20 hover:bg-white/30 text-white text-xl px-8 py-6">
-              Back to Challenges
+
+          {/* Game Instructions */}
+          <div className="bg-white/5 rounded-2xl p-6 mb-8 text-left">
+            <h2 className="text-2xl font-bold text-white mb-4 font-fredoka">
+              📋 What You'll Do:
+            </h2>
+            <div className="space-y-4 text-white/90">
+              <div className="flex gap-3">
+                <span className="text-2xl">🗺️</span>
+                <div>
+                  <strong className="text-white">Site Mapping:</strong> Take
+                  photos of the excavation site from different angles. Remember
+                  to include scale bars and north arrows for accurate
+                  documentation.
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <span className="text-2xl">📐</span>
+                <div>
+                  <strong className="text-white">Measurements:</strong> Record
+                  precise measurements of artifacts and features using the
+                  proper tools and units.
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <span className="text-2xl">📝</span>
+                <div>
+                  <strong className="text-white">Report Writing:</strong>{" "}
+                  Complete all sections of the site report including site
+                  description, methodology, findings, and conclusions.
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <span className="text-2xl">✅</span>
+                <div>
+                  <strong className="text-white">Validation:</strong> Review
+                  your work to ensure all documentation requirements are met
+                  before submitting your final report.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-4 justify-center">
+            <Button
+              onClick={handleStartGame}
+              className="bg-sand-400 hover:bg-sand-500 text-sand-900 text-xl px-8 py-6"
+            >
+              Start Documentation Challenge
             </Button>
-          </Link>
+            <Link href="/challenges">
+              <Button className="bg-white/20 hover:bg-white/30 text-white text-xl px-8 py-6">
+                Back to Challenges
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -269,6 +318,7 @@ function SiteDocumentationGameContent() {
           <div className="lg:col-span-2">
             {activeTab === "mapping" && (
               <SiteMapper
+                sessionId={sessionId}
                 gridWidth={gameState.site.gridWidth}
                 gridHeight={gameState.site.gridHeight}
                 onPhotoTaken={handlePhotoTaken}
