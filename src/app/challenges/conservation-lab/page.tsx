@@ -317,6 +317,16 @@ function ConservationLabGameContent() {
                 selectedProcesses={gameData.selectedProcesses}
                 onSelectProcess={handleSelectProcess}
                 onRemoveProcess={handleRemoveProcess}
+                onValidateSelection={() => {
+                  // Only allow proceeding to treatment if validation passes
+                  if (
+                    gameData.selectedProcesses.every(
+                      (p: any) => p.isAppropriate
+                    )
+                  ) {
+                    setActiveTab("treatment");
+                  }
+                }}
               />
             )}
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 interface ConservationProcess {
@@ -16,6 +17,7 @@ interface ProcessSelectorProps {
   selectedProcesses: ConservationProcess[];
   onSelectProcess: (processId: string) => void;
   onRemoveProcess: (processId: string) => void;
+  onValidateSelection?: () => void;
 }
 
 export function ProcessSelector({
@@ -23,7 +25,13 @@ export function ProcessSelector({
   selectedProcesses,
   onSelectProcess,
   onRemoveProcess,
+  onValidateSelection,
 }: ProcessSelectorProps) {
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [feedbackType, setFeedbackType] = useState<"success" | "error">(
+    "error"
+  );
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case "cleaning":
@@ -57,6 +65,43 @@ export function ProcessSelector({
   const unselectedProcesses = availableProcesses.filter(
     (p) => !selectedProcesses.some((sp) => sp.id === p.id)
   );
+
+  const handleValidateSelection = () => {
+    if (selectedProcesses.length === 0) {
+      setFeedbackMessage("Please select at least one conservation process.");
+      setFeedbackType("error");
+      setShowFeedback(true);
+      return;
+    }
+
+    const inappropriateProcesses = selectedProcesses.filter(
+      (p) => !p.isAppropriate
+    );
+    const appropriateProcesses = selectedProcesses.filter(
+      (p) => p.isAppropriate
+    );
+
+    // Check if all selected processes are appropriate
+    if (
+      inappropriateProcesses.length === 0 &&
+      appropriateProcesses.length > 0
+    ) {
+      setFeedbackMessage(
+        `Excellent! All ${appropriateProcesses.length} selected process(es) are appropriate for this artifact. You can now proceed to create your treatment plan.`
+      );
+      setFeedbackType("success");
+      setShowFeedback(true);
+      if (onValidateSelection) {
+        onValidateSelection();
+      }
+    } else {
+      setFeedbackMessage(
+        `You have ${inappropriateProcesses.length} inappropriate process(es) selected. Review the warnings and remove processes that aren't suitable for this artifact before proceeding.`
+      );
+      setFeedbackType("error");
+      setShowFeedback(true);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -105,6 +150,26 @@ export function ProcessSelector({
           <h3 className="text-white font-bold text-lg mb-3">
             Selected Processes ({selectedProcesses.length})
           </h3>
+
+          {/* Feedback message */}
+          {showFeedback && (
+            <div
+              className={`mb-4 p-3 rounded-lg border-2 ${
+                feedbackType === "success"
+                  ? "bg-green-500/20 border-green-400"
+                  : "bg-red-500/20 border-red-400"
+              }`}
+            >
+              <p
+                className={`text-sm ${
+                  feedbackType === "success" ? "text-green-200" : "text-red-200"
+                }`}
+              >
+                {feedbackMessage}
+              </p>
+            </div>
+          )}
+
           <div className="space-y-2">
             {selectedProcesses.map((process, index) => (
               <div
@@ -154,6 +219,14 @@ export function ProcessSelector({
               {selectedProcesses.reduce((sum, p) => sum + p.duration, 0)} hours
             </p>
           </div>
+
+          {/* Validate Selection Button */}
+          <Button
+            onClick={handleValidateSelection}
+            className="w-full mt-4 bg-sand-400 hover:bg-sand-500 text-sand-900 font-semibold"
+          >
+            Check My Selection
+          </Button>
         </div>
       )}
 
