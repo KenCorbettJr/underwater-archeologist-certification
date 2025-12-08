@@ -85,7 +85,7 @@ export function ProcessSelector({
                 </div>
                 <Button
                   onClick={() => onSelectProcess(process.id)}
-                  className="bg-white/20 hover:bg-white/30 text-white text-sm px-3 py-1"
+                  className="bg-white/20 hover:bg-white/30 text-white text-sm px-3 py-1 shrink-0"
                 >
                   Select
                 </Button>
@@ -109,12 +109,16 @@ export function ProcessSelector({
             {selectedProcesses.map((process, index) => (
               <div
                 key={process.id}
-                className="flex items-center gap-3 p-3 bg-white/5 rounded-lg"
+                className={`flex items-center gap-3 p-3 rounded-lg border-2 ${
+                  process.isAppropriate
+                    ? "bg-green-500/10 border-green-500/30"
+                    : "bg-red-500/10 border-red-500/30"
+                }`}
               >
-                <div className="w-8 h-8 rounded-full bg-sand-400 flex items-center justify-center text-sand-900 font-bold text-sm">
+                <div className="w-8 h-8 rounded-full bg-sand-400 flex items-center justify-center text-sand-900 font-bold text-sm shrink-0">
                   {index + 1}
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">
                       {getCategoryIcon(process.category)}
@@ -122,12 +126,22 @@ export function ProcessSelector({
                     <span className="text-white font-semibold">
                       {process.name}
                     </span>
+                    {process.isAppropriate ? (
+                      <span className="text-green-400 text-sm">✓</span>
+                    ) : (
+                      <span className="text-red-400 text-sm">⚠️</span>
+                    )}
                   </div>
                   <p className="text-white/60 text-xs">{process.description}</p>
+                  {!process.isAppropriate && (
+                    <p className="text-red-400 text-xs mt-1">
+                      ⚠️ This process may not be suitable for this artifact
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={() => onRemoveProcess(process.id)}
-                  className="text-red-400 hover:text-red-300 px-2"
+                  className="text-red-400 hover:text-red-300 px-2 shrink-0"
                 >
                   ✕
                 </button>

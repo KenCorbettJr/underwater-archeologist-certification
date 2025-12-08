@@ -44,21 +44,24 @@ export function ConservationWorkbench({
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
 
-  // Create damage options from actual damages in the condition
-  const damageOptions = condition.damages.map((damage) => ({
-    id: damage.id,
-    type: damage.type,
-    label: damage.type.charAt(0).toUpperCase() + damage.type.slice(1),
-    icon:
-      damage.type === "corrosion"
-        ? "🦠"
-        : damage.type === "fracture"
-          ? "💔"
-          : damage.type === "encrustation"
-            ? "🪨"
-            : damage.type === "biological"
-              ? "🌿"
-              : "⚠️",
+  // All possible damage types (not just the correct answers)
+  const allDamageTypes = [
+    { type: "corrosion", label: "Corrosion", icon: "🦠" },
+    { type: "fracture", label: "Fracture", icon: "💔" },
+    { type: "encrustation", label: "Encrustation", icon: "🪨" },
+    { type: "biological", label: "Biological Growth", icon: "🌿" },
+    { type: "deterioration", label: "Deterioration", icon: "⚠️" },
+  ];
+
+  // Map damage types to their IDs in the condition
+  const damageTypeToId = new Map(condition.damages.map((d) => [d.type, d.id]));
+
+  // Create options with IDs where they exist, or use type as ID for non-existent damages
+  const damageOptions = allDamageTypes.map((damageType) => ({
+    id: damageTypeToId.get(damageType.type) || `not_present_${damageType.type}`,
+    type: damageType.type,
+    label: damageType.label,
+    icon: damageType.icon,
   }));
 
   const toggleDamage = (damageId: string) => {
@@ -73,30 +76,32 @@ export function ConservationWorkbench({
   const handleSubmitAssessment = () => {
     // Check if all damages are correctly identified
     const allDamageIds = condition.damages.map((d) => d.id);
-    const correctCount = selectedDamages.filter((id) =>
+    const correctSelections = selectedDamages.filter((id) =>
       allDamageIds.includes(id)
-    ).length;
-    const accuracy = correctCount / allDamageIds.length;
+    );
+    const incorrectSelections = selectedDamages.filter(
+      (id) => !allDamageIds.includes(id)
+    );
+    const missedDamages = allDamageIds.filter(
+      (id) => !selectedDamages.includes(id)
+    );
 
-    // Only proceed if accuracy is high enough (at least 80%)
-    if (accuracy >= 0.8) {
+    // Check if perfect match (all correct, none incorrect, none missed)
+    if (
+      correctSelections.length === allDamageIds.length &&
+      incorrectSelections.length === 0 &&
+      missedDamages.length === 0
+    ) {
       setShowFeedback(false);
       onAssessmentComplete(selectedDamages);
     } else {
       // Show feedback and let them try again
-      const missedDamages = allDamageIds.filter(
-        (id) => !selectedDamages.includes(id)
-      );
-      const incorrectSelections = selectedDamages.filter(
-        (id) => !allDamageIds.includes(id)
-      );
-
       let message = "Not quite right. ";
       if (missedDamages.length > 0) {
         message += `You missed ${missedDamages.length} damage type(s). `;
       }
       if (incorrectSelections.length > 0) {
-        message += `You selected ${incorrectSelections.length} incorrect damage type(s). `;
+        message += `You selected ${incorrectSelections.length} damage type(s) that aren't present. `;
       }
       message += "Look more carefully and try again!";
 
