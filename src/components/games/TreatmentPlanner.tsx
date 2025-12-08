@@ -27,6 +27,8 @@ interface TreatmentPlannerProps {
   onCreatePlan: (processOrder: string[]) => void;
   onExecuteStep: (stepId: string) => void;
   planCreated: boolean;
+  artifactImage?: string;
+  artifactName?: string;
 }
 
 export function TreatmentPlanner({
@@ -35,6 +37,8 @@ export function TreatmentPlanner({
   onCreatePlan,
   onExecuteStep,
   planCreated,
+  artifactImage,
+  artifactName,
 }: TreatmentPlannerProps) {
   const [processOrder, setProcessOrder] = useState<string[]>([]);
   const [draggedProcessId, setDraggedProcessId] = useState<string | null>(null);
@@ -100,9 +104,99 @@ export function TreatmentPlanner({
   };
 
   if (planCreated && treatmentPlan.length > 0) {
+    const completedSteps = treatmentPlan.filter((s) => s.isComplete).length;
+    const totalSteps = treatmentPlan.length;
+    const progressPercent = (completedSteps / totalSteps) * 100;
+
+    // Calculate visual improvement based on progress
+    const getArtifactFilter = () => {
+      if (progressPercent === 0) {
+        return "brightness(0.7) contrast(0.9) saturate(0.6)";
+      } else if (progressPercent < 50) {
+        return "brightness(0.85) contrast(0.95) saturate(0.8)";
+      } else if (progressPercent < 100) {
+        return "brightness(1.0) contrast(1.0) saturate(0.95)";
+      } else {
+        return "brightness(1.15) contrast(1.1) saturate(1.1)";
+      }
+    };
+
+    const getDamageOpacity = () => {
+      return Math.max(0, 1 - progressPercent / 100);
+    };
+
     // Show execution view
     return (
       <div className="space-y-4">
+        {/* Artifact Progress Display */}
+        {artifactImage && (
+          <div className="bg-gradient-to-br from-stone-900 to-stone-800 rounded-lg p-6">
+            <h3 className="text-white font-bold text-lg mb-3 text-center">
+              Conservation Progress
+            </h3>
+            <div className="relative flex items-center justify-center min-h-[300px]">
+              <div className="relative">
+                <img
+                  src={artifactImage}
+                  alt={artifactName || "Artifact"}
+                  className="max-w-sm max-h-[280px] object-contain rounded-lg transition-all duration-1000"
+                  style={{
+                    filter: getArtifactFilter(),
+                  }}
+                />
+                {/* Progressive damage removal overlays */}
+                <div
+                  className="absolute inset-0 pointer-events-none transition-opacity duration-1000"
+                  style={{
+                    opacity: getDamageOpacity(),
+                    background:
+                      "radial-gradient(circle at 30% 40%, rgba(139, 115, 85, 0.6) 0%, transparent 40%), radial-gradient(circle at 70% 60%, rgba(101, 84, 63, 0.5) 0%, transparent 35%)",
+                    mixBlendMode: "multiply",
+                  }}
+                />
+                <div
+                  className="absolute inset-0 pointer-events-none transition-opacity duration-1000"
+                  style={{
+                    opacity: getDamageOpacity() * 0.8,
+                    background:
+                      "linear-gradient(180deg, transparent 0%, rgba(62, 39, 35, 0.3) 100%)",
+                    mixBlendMode: "multiply",
+                  }}
+                />
+
+                {/* Completion badge */}
+                {progressPercent === 100 && (
+                  <div className="absolute -top-3 -right-3 bg-gradient-to-br from-yellow-400 to-yellow-600 text-yellow-900 px-4 py-2 rounded-full text-sm font-bold shadow-lg animate-pulse">
+                    ✨ Restored!
+                  </div>
+                )}
+              </div>
+
+              {/* Examination lighting effect */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    "radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 60%)",
+                }}
+              />
+            </div>
+
+            {/* Progress indicator */}
+            <div className="mt-4 text-center">
+              <div className="inline-flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full">
+                <span className="text-white/80 text-sm">Condition:</span>
+                <span className="text-sand-400 font-bold">
+                  {progressPercent === 0 && "Poor"}
+                  {progressPercent > 0 && progressPercent < 50 && "Fair"}
+                  {progressPercent >= 50 && progressPercent < 100 && "Good"}
+                  {progressPercent === 100 && "Excellent"}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="bg-white/10 backdrop-blur-md rounded-lg p-4">
           <h3 className="text-white font-bold text-lg mb-3">
             Treatment Execution

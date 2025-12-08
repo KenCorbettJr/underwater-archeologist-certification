@@ -99,14 +99,102 @@ export function ConservationWorkbench({
 
         {viewMode === "visual" && (
           <div className="space-y-4">
-            {/* Artifact Image */}
-            <div className="bg-white/5 rounded-lg p-8 flex items-center justify-center min-h-[300px]">
-              <div className="text-center">
-                <div className="text-8xl mb-4">🏺</div>
-                <p className="text-white/60 text-sm">
-                  Artifact under examination
-                </p>
+            {/* Artifact Image with Damage Overlay */}
+            <div className="bg-gradient-to-br from-stone-900 to-stone-800 rounded-lg p-8 flex items-center justify-center min-h-[400px] relative overflow-hidden">
+              {/* Artifact Display */}
+              <div className="relative">
+                {/* Main artifact image with realistic styling */}
+                {artifactImage ? (
+                  <div className="relative">
+                    <img
+                      src={artifactImage}
+                      alt={artifactName}
+                      className="max-w-md max-h-[350px] object-contain rounded-lg"
+                      style={{
+                        filter: assessmentComplete
+                          ? "brightness(1.1) contrast(1.05)"
+                          : "brightness(0.7) contrast(0.9) saturate(0.6)",
+                      }}
+                    />
+                    {/* Damage overlays - only show before assessment */}
+                    {!assessmentComplete && (
+                      <>
+                        {/* Encrustation overlay */}
+                        {condition.damages.some(
+                          (d) => d.type === "encrustation"
+                        ) && (
+                          <div
+                            className="absolute inset-0 pointer-events-none"
+                            style={{
+                              background:
+                                "radial-gradient(circle at 30% 40%, rgba(139, 115, 85, 0.6) 0%, transparent 40%), radial-gradient(circle at 70% 60%, rgba(101, 84, 63, 0.5) 0%, transparent 35%)",
+                              mixBlendMode: "multiply",
+                            }}
+                          />
+                        )}
+                        {/* Corrosion overlay */}
+                        {condition.damages.some(
+                          (d) => d.type === "corrosion"
+                        ) && (
+                          <div
+                            className="absolute inset-0 pointer-events-none"
+                            style={{
+                              background:
+                                "radial-gradient(circle at 20% 70%, rgba(120, 81, 45, 0.5) 0%, transparent 30%), radial-gradient(circle at 80% 30%, rgba(139, 90, 43, 0.4) 0%, transparent 25%)",
+                              mixBlendMode: "overlay",
+                            }}
+                          />
+                        )}
+                        {/* Biological growth overlay */}
+                        {condition.damages.some(
+                          (d) => d.type === "biological"
+                        ) && (
+                          <div
+                            className="absolute inset-0 pointer-events-none"
+                            style={{
+                              background:
+                                "radial-gradient(circle at 50% 80%, rgba(34, 139, 34, 0.4) 0%, transparent 40%), radial-gradient(circle at 40% 20%, rgba(46, 125, 50, 0.3) 0%, transparent 30%)",
+                              mixBlendMode: "darken",
+                            }}
+                          />
+                        )}
+                        {/* Dirt and sediment overlay */}
+                        <div
+                          className="absolute inset-0 pointer-events-none"
+                          style={{
+                            background:
+                              "linear-gradient(180deg, transparent 0%, rgba(62, 39, 35, 0.3) 100%)",
+                            mixBlendMode: "multiply",
+                          }}
+                        />
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <div className="text-9xl mb-4 opacity-60">🏺</div>
+                    <p className="text-white/60 text-sm">
+                      Artifact under examination
+                    </p>
+                  </div>
+                )}
+
+                {/* Assessment status badge */}
+                {assessmentComplete && (
+                  <div className="absolute -top-2 -right-2 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                    ✓ Assessed
+                  </div>
+                )}
               </div>
+
+              {/* Examination lighting effect */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    "radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 60%)",
+                }}
+              />
             </div>
 
             {/* Quick Info */}

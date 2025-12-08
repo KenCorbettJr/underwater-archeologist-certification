@@ -327,6 +327,8 @@ function ConservationLabGameContent() {
                 onCreatePlan={handleCreatePlan}
                 onExecuteStep={handleExecuteStep}
                 planCreated={gameData.treatmentPlan.length > 0}
+                artifactImage={gameState.artifact.imageUrl}
+                artifactName={gameState.artifact.name}
               />
             )}
           </div>

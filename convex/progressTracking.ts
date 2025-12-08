@@ -110,6 +110,7 @@ export const getUserGameSessions = query({
   returns: v.array(
     v.object({
       _id: v.id("gameSessions"),
+      _creationTime: v.number(),
       userId: v.id("users"),
       gameType: v.union(
         v.literal("artifact_identification"),
