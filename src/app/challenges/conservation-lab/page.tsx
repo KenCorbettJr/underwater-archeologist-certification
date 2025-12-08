@@ -27,6 +27,9 @@ function ConservationLabGameContent() {
   );
   const selectProcess = useMutation(api.conservationLabGame.selectProcess);
   const removeProcess = useMutation(api.conservationLabGame.removeProcess);
+  const validateSelection = useMutation(
+    api.conservationLabGame.validateProcessSelection
+  );
   const createPlan = useMutation(api.conservationLabGame.createTreatmentPlan);
   const executeStep = useMutation(api.conservationLabGame.executeTreatmentStep);
   const completeGame = useMutation(
@@ -337,14 +340,20 @@ function ConservationLabGameContent() {
                 selectedProcesses={gameData.selectedProcesses}
                 onSelectProcess={handleSelectProcess}
                 onRemoveProcess={handleRemoveProcess}
-                onValidateSelection={() => {
-                  // Only allow proceeding to treatment if validation passes
-                  if (
-                    gameData.selectedProcesses.every(
-                      (p: any) => p.isAppropriate
-                    )
-                  ) {
-                    setActiveTab("treatment");
+                onValidateSelection={async () => {
+                  if (!sessionId) return;
+                  try {
+                    const result = await validateSelection({ sessionId });
+                    if (result.success) {
+                      alert(
+                        `✅ ${result.feedback}\n\n+${result.pointsEarned} points earned!`
+                      );
+                      setActiveTab("treatment");
+                    } else {
+                      alert(`❌ ${result.feedback}`);
+                    }
+                  } catch (error) {
+                    console.error("Failed to validate selection:", error);
                   }
                 }}
               />

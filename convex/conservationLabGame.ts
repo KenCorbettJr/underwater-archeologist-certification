@@ -298,6 +298,76 @@ export const removeProcess = mutation({
   },
 });
 
+// Validate process selection
+export const validateProcessSelection = mutation({
+  args: {
+    sessionId: v.id("gameSessions"),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    pointsEarned: v.number(),
+    appropriateCount: v.number(),
+    inappropriateCount: v.number(),
+    feedback: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || session.status !== "active") {
+      throw new Error("Invalid or inactive game session");
+    }
+
+    const gameData: ConservationGameData = JSON.parse(session.gameData);
+
+    if (gameData.selectedProcesses.length === 0) {
+      return {
+        success: false,
+        pointsEarned: 0,
+        appropriateCount: 0,
+        inappropriateCount: 0,
+        feedback: "Please select at least one conservation process.",
+      };
+    }
+
+    const appropriateProcesses = gameData.selectedProcesses.filter(
+      (p) => p.isAppropriate
+    );
+    const inappropriateProcesses = gameData.selectedProcesses.filter(
+      (p) => !p.isAppropriate
+    );
+
+    // Award points for appropriate selections (10 points each, max 40 for 4 processes)
+    const pointsEarned = appropriateProcesses.length * 10;
+
+    if (
+      inappropriateProcesses.length === 0 &&
+      appropriateProcesses.length > 0
+    ) {
+      gameData.score += pointsEarned;
+
+      await ctx.db.patch(args.sessionId, {
+        currentScore: session.currentScore + pointsEarned,
+        gameData: JSON.stringify(gameData),
+      });
+
+      return {
+        success: true,
+        pointsEarned,
+        appropriateCount: appropriateProcesses.length,
+        inappropriateCount: 0,
+        feedback: `Excellent! All ${appropriateProcesses.length} selected process(es) are appropriate. You earned ${pointsEarned} points!`,
+      };
+    } else {
+      return {
+        success: false,
+        pointsEarned: 0,
+        appropriateCount: appropriateProcesses.length,
+        inappropriateCount: inappropriateProcesses.length,
+        feedback: `You have ${inappropriateProcesses.length} inappropriate process(es) selected. Remove them before proceeding.`,
+      };
+    }
+  },
+});
+
 // Create treatment plan
 export const createTreatmentPlan = mutation({
   args: {
