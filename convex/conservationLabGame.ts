@@ -101,7 +101,7 @@ export const startConservationLabGame = mutation({
       status: "active",
       startTime: Date.now(),
       currentScore: 0,
-      maxScore: 1000,
+      maxScore: 100,
       completionPercentage: 0,
       gameData: JSON.stringify(gameData),
       actions: [],
@@ -137,7 +137,7 @@ export const completeAssessment = mutation({
     );
 
     const accuracy = correctIdentifications.length / actualDamages.length;
-    const assessmentScore = Math.round(accuracy * 200);
+    const assessmentScore = Math.round(accuracy * 20); // Out of 20 points
 
     gameData.assessmentComplete = true;
     gameData.score += assessmentScore;
@@ -209,15 +209,15 @@ export const selectProcess = mutation({
         stepId: args.processId,
         description: `${process.name} is not appropriate for this artifact`,
         consequence: "May cause damage or be ineffective",
-        pointsPenalty: 50,
+        pointsPenalty: 5,
       });
-      gameData.score -= 50;
+      gameData.score -= 5;
     }
 
     await ctx.db.patch(args.sessionId, {
       currentScore: Math.max(
         0,
-        session.currentScore + (process.isAppropriate ? 0 : -50)
+        session.currentScore + (process.isAppropriate ? 0 : -5)
       ),
       gameData: JSON.stringify(gameData),
     });
@@ -256,7 +256,7 @@ export const createTreatmentPlan = mutation({
       args.processOrder,
       gameData.selectedProcesses
     );
-    const planScore = correctOrder ? 300 : 100;
+    const planScore = correctOrder ? 30 : 10; // Out of 30 points
 
     // Create treatment steps
     gameData.treatmentPlan = args.processOrder.map((processId, index) => {
@@ -327,7 +327,7 @@ export const executeTreatmentStep = mutation({
     step.isComplete = true;
     gameData.completedSteps.push(args.stepId);
 
-    const stepScore = step.isCorrect ? 100 : 50;
+    const stepScore = step.isCorrect ? 10 : 5; // Out of 10 points per step
     gameData.score += stepScore;
 
     const completionPercentage = Math.round(

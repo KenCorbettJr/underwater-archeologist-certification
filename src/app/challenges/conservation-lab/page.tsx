@@ -92,7 +92,13 @@ function ConservationLabGameContent() {
     if (!sessionId) return;
     try {
       const result = await selectProcess({ sessionId, processId });
-      console.log("Process selection result:", result);
+
+      // Show feedback for inappropriate process selection
+      if (!result.isAppropriate) {
+        alert(
+          `❌ Incorrect Choice!\n\n${result.feedback}\n\nYou lost 5 points for selecting an inappropriate process.`
+        );
+      }
     } catch (error) {
       console.error("Failed to select process:", error);
     }
