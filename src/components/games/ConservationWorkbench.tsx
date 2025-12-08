@@ -83,40 +83,8 @@ export function ConservationWorkbench({
   };
 
   const handleSubmitAssessment = () => {
-    // Check if all damages are correctly identified
-    const allDamageIds = condition.damages.map((d) => d.id);
-    const correctSelections = selectedDamages.filter((id) =>
-      allDamageIds.includes(id)
-    );
-    const incorrectSelections = selectedDamages.filter(
-      (id) => !allDamageIds.includes(id)
-    );
-    const missedDamages = allDamageIds.filter(
-      (id) => !selectedDamages.includes(id)
-    );
-
-    // Check if perfect match (all correct, none incorrect, none missed)
-    if (
-      correctSelections.length === allDamageIds.length &&
-      incorrectSelections.length === 0 &&
-      missedDamages.length === 0
-    ) {
-      setShowFeedback(false);
-      onAssessmentComplete(selectedDamages);
-    } else {
-      // Show feedback and let them try again
-      let message = "Not quite right. ";
-      if (missedDamages.length > 0) {
-        message += `You missed ${missedDamages.length} damage type(s). `;
-      }
-      if (incorrectSelections.length > 0) {
-        message += `You selected ${incorrectSelections.length} damage type(s) that aren't present. `;
-      }
-      message += "Look more carefully and try again!";
-
-      setFeedbackMessage(message);
-      setShowFeedback(true);
-    }
+    // Submit regardless of correctness - no multiple chances
+    onAssessmentComplete(selectedDamages);
   };
 
   const getSeverityColor = (severity: string) => {

@@ -232,6 +232,72 @@ export const selectProcess = mutation({
   },
 });
 
+// Remove conservation process
+export const removeProcess = mutation({
+  args: {
+    sessionId: v.id("gameSessions"),
+    processId: v.string(),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    feedback: v.string(),
+    pointsRestored: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || session.status !== "active") {
+      throw new Error("Invalid or inactive game session");
+    }
+
+    const gameData: ConservationGameData = JSON.parse(session.gameData);
+
+    // Find the process
+    const processIndex = gameData.selectedProcesses.findIndex(
+      (p) => p.id === args.processId
+    );
+
+    if (processIndex === -1) {
+      return {
+        success: false,
+        feedback: "Process not found",
+        pointsRestored: 0,
+      };
+    }
+
+    const process = gameData.selectedProcesses[processIndex];
+    let pointsRestored = 0;
+
+    // If it was an inappropriate process, restore the penalty points
+    if (!process.isAppropriate) {
+      const mistakeIndex = gameData.mistakes.findIndex(
+        (m) => m.stepId === args.processId
+      );
+      if (mistakeIndex !== -1) {
+        pointsRestored = gameData.mistakes[mistakeIndex].pointsPenalty;
+        gameData.mistakes.splice(mistakeIndex, 1);
+        gameData.score += pointsRestored;
+      }
+    }
+
+    // Remove the process
+    gameData.selectedProcesses.splice(processIndex, 1);
+
+    await ctx.db.patch(args.sessionId, {
+      currentScore: session.currentScore + pointsRestored,
+      gameData: JSON.stringify(gameData),
+    });
+
+    return {
+      success: true,
+      feedback:
+        pointsRestored > 0
+          ? `Process removed. ${pointsRestored} points restored.`
+          : "Process removed.",
+      pointsRestored,
+    };
+  },
+});
+
 // Create treatment plan
 export const createTreatmentPlan = mutation({
   args: {

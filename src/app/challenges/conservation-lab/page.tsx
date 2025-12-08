@@ -26,6 +26,7 @@ function ConservationLabGameContent() {
     api.conservationLabGame.completeAssessment
   );
   const selectProcess = useMutation(api.conservationLabGame.selectProcess);
+  const removeProcess = useMutation(api.conservationLabGame.removeProcess);
   const createPlan = useMutation(api.conservationLabGame.createTreatmentPlan);
   const executeStep = useMutation(api.conservationLabGame.executeTreatmentStep);
   const completeGame = useMutation(
@@ -104,9 +105,22 @@ function ConservationLabGameContent() {
     }
   };
 
-  const handleRemoveProcess = (processId: string) => {
-    // In a real implementation, you'd have a mutation to remove a process
-    console.log("Remove process:", processId);
+  const handleRemoveProcess = async (processId: string) => {
+    if (!sessionId) return;
+    try {
+      const result = await removeProcess({ sessionId, processId });
+
+      // Show feedback
+      if (result.success) {
+        if (result.pointsRestored > 0) {
+          alert(
+            `✅ ${result.feedback}\n\nYou recovered ${result.pointsRestored} points!`
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Failed to remove process:", error);
+    }
   };
 
   const handleCreatePlan = async (processOrder: string[]) => {

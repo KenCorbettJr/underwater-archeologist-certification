@@ -307,7 +307,11 @@ export function TreatmentPlanner({
               key={process.id}
               draggable
               onDragStart={() => handleDragStart(process.id)}
-              className="p-3 bg-white/20 rounded-lg cursor-move hover:bg-white/30 transition-all border-2 border-white/30"
+              onClick={() => {
+                // Click to add to end of plan
+                setProcessOrder([...processOrder, process.id]);
+              }}
+              className="p-3 bg-white/20 rounded-lg cursor-pointer hover:bg-white/30 transition-all border-2 border-white/30"
             >
               <div className="flex items-center gap-2">
                 <span className="text-xl">
@@ -321,6 +325,7 @@ export function TreatmentPlanner({
                     {process.category}
                   </p>
                 </div>
+                <span className="text-white/60 text-xs">Click or Drag</span>
               </div>
             </div>
           ))}
