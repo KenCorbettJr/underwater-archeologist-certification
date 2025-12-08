@@ -41,16 +41,28 @@ export function ConservationWorkbench({
 }: ConservationWorkbenchProps) {
   const [selectedDamages, setSelectedDamages] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"visual" | "details">("visual");
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState("");
 
-  const damageTypes = [
-    { id: "corrosion", label: "Corrosion", icon: "🦠" },
-    { id: "fracture", label: "Fracture", icon: "💔" },
-    { id: "encrustation", label: "Encrustation", icon: "🪨" },
-    { id: "biological", label: "Biological Growth", icon: "🌿" },
-    { id: "deterioration", label: "Deterioration", icon: "⚠️" },
-  ];
+  // Create damage options from actual damages in the condition
+  const damageOptions = condition.damages.map((damage) => ({
+    id: damage.id,
+    type: damage.type,
+    label: damage.type.charAt(0).toUpperCase() + damage.type.slice(1),
+    icon:
+      damage.type === "corrosion"
+        ? "🦠"
+        : damage.type === "fracture"
+          ? "💔"
+          : damage.type === "encrustation"
+            ? "🪨"
+            : damage.type === "biological"
+              ? "🌿"
+              : "⚠️",
+  }));
 
   const toggleDamage = (damageId: string) => {
+    setShowFeedback(false);
     if (selectedDamages.includes(damageId)) {
       setSelectedDamages(selectedDamages.filter((id) => id !== damageId));
     } else {
@@ -59,7 +71,38 @@ export function ConservationWorkbench({
   };
 
   const handleSubmitAssessment = () => {
-    onAssessmentComplete(selectedDamages);
+    // Check if all damages are correctly identified
+    const allDamageIds = condition.damages.map((d) => d.id);
+    const correctCount = selectedDamages.filter((id) =>
+      allDamageIds.includes(id)
+    ).length;
+    const accuracy = correctCount / allDamageIds.length;
+
+    // Only proceed if accuracy is high enough (at least 80%)
+    if (accuracy >= 0.8) {
+      setShowFeedback(false);
+      onAssessmentComplete(selectedDamages);
+    } else {
+      // Show feedback and let them try again
+      const missedDamages = allDamageIds.filter(
+        (id) => !selectedDamages.includes(id)
+      );
+      const incorrectSelections = selectedDamages.filter(
+        (id) => !allDamageIds.includes(id)
+      );
+
+      let message = "Not quite right. ";
+      if (missedDamages.length > 0) {
+        message += `You missed ${missedDamages.length} damage type(s). `;
+      }
+      if (incorrectSelections.length > 0) {
+        message += `You selected ${incorrectSelections.length} incorrect damage type(s). `;
+      }
+      message += "Look more carefully and try again!";
+
+      setFeedbackMessage(message);
+      setShowFeedback(true);
+    }
   };
 
   const getSeverityColor = (severity: string) => {
@@ -285,22 +328,30 @@ export function ConservationWorkbench({
           <h4 className="text-white font-semibold mb-3">
             Identify Damage Types Present:
           </h4>
+
+          {/* Feedback message */}
+          {showFeedback && (
+            <div className="mb-4 p-3 bg-yellow-500/20 border-2 border-yellow-400 rounded-lg">
+              <p className="text-yellow-200 text-sm">{feedbackMessage}</p>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
-            {damageTypes.map((type) => (
+            {damageOptions.map((option) => (
               <button
-                key={type.id}
-                onClick={() => toggleDamage(type.id)}
+                key={option.id}
+                onClick={() => toggleDamage(option.id)}
                 className={`
                   p-3 rounded-lg text-sm font-medium transition-all border-2
                   ${
-                    selectedDamages.includes(type.id)
+                    selectedDamages.includes(option.id)
                       ? "bg-sand-400/30 border-sand-400 text-white"
                       : "bg-white/10 border-white/20 text-white/70 hover:bg-white/20"
                   }
                 `}
               >
-                <div className="text-2xl mb-1">{type.icon}</div>
-                {type.label}
+                <div className="text-2xl mb-1">{option.icon}</div>
+                {option.label}
               </button>
             ))}
           </div>
