@@ -45,7 +45,16 @@ export function ConservationWorkbench({
   const [feedbackMessage, setFeedbackMessage] = useState("");
 
   // All possible damage types (not just the correct answers)
-  const allDamageTypes = [
+  const allDamageTypes: Array<{
+    type:
+      | "corrosion"
+      | "fracture"
+      | "encrustation"
+      | "biological"
+      | "deterioration";
+    label: string;
+    icon: string;
+  }> = [
     { type: "corrosion", label: "Corrosion", icon: "🦠" },
     { type: "fracture", label: "Fracture", icon: "💔" },
     { type: "encrustation", label: "Encrustation", icon: "🪨" },
