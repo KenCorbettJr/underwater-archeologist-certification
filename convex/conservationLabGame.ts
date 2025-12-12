@@ -11,6 +11,7 @@ interface ConservationGameData {
   treatmentPlan: TreatmentStep[];
   completedSteps: string[];
   score: number;
+  bonusPoints: number;
   mistakes: ConservationMistake[];
 }
 
@@ -91,6 +92,7 @@ export const startConservationLabGame = mutation({
       treatmentPlan: [],
       completedSteps: [],
       score: 0,
+      bonusPoints: 0,
       mistakes: [],
     };
 
@@ -140,10 +142,18 @@ export const completeAssessment = mutation({
     const assessmentScore = Math.round(accuracy * 20); // Out of 20 points
 
     gameData.assessmentComplete = true;
-    gameData.score += assessmentScore;
+
+    // Cap score at 100, overflow goes to bonus
+    const newTotal = gameData.score + assessmentScore;
+    if (newTotal > 100) {
+      gameData.bonusPoints += newTotal - 100;
+      gameData.score = 100;
+    } else {
+      gameData.score = newTotal;
+    }
 
     await ctx.db.patch(args.sessionId, {
-      currentScore: session.currentScore + assessmentScore,
+      currentScore: Math.min(100, session.currentScore + assessmentScore),
       completionPercentage: 25,
       gameData: JSON.stringify(gameData),
     });
@@ -211,13 +221,13 @@ export const selectProcess = mutation({
         consequence: "May cause damage or be ineffective",
         pointsPenalty: 5,
       });
-      gameData.score -= 5;
+      gameData.score = Math.max(0, gameData.score - 5);
     }
 
     await ctx.db.patch(args.sessionId, {
       currentScore: Math.max(
         0,
-        session.currentScore + (process.isAppropriate ? 0 : -5)
+        session.currentScore - (process.isAppropriate ? 0 : 5)
       ),
       gameData: JSON.stringify(gameData),
     });
@@ -283,7 +293,7 @@ export const removeProcess = mutation({
     gameData.selectedProcesses.splice(processIndex, 1);
 
     await ctx.db.patch(args.sessionId, {
-      currentScore: session.currentScore + pointsRestored,
+      currentScore: Math.min(100, session.currentScore + pointsRestored),
       gameData: JSON.stringify(gameData),
     });
 
@@ -342,10 +352,17 @@ export const validateProcessSelection = mutation({
       inappropriateProcesses.length === 0 &&
       appropriateProcesses.length > 0
     ) {
-      gameData.score += pointsEarned;
+      // Cap score at 100, overflow goes to bonus
+      const newTotal = gameData.score + pointsEarned;
+      if (newTotal > 100) {
+        gameData.bonusPoints += newTotal - 100;
+        gameData.score = 100;
+      } else {
+        gameData.score = newTotal;
+      }
 
       await ctx.db.patch(args.sessionId, {
-        currentScore: session.currentScore + pointsEarned,
+        currentScore: Math.min(100, session.currentScore + pointsEarned),
         gameData: JSON.stringify(gameData),
       });
 
@@ -378,6 +395,12 @@ export const createTreatmentPlan = mutation({
     score: v.number(),
     isCorrectOrder: v.boolean(),
     feedback: v.string(),
+    orderingErrors: v.array(
+      v.object({
+        processName: v.string(),
+        issue: v.string(),
+      })
+    ),
   }),
   handler: async (ctx, args) => {
     const session = await ctx.db.get(args.sessionId);
@@ -388,10 +411,11 @@ export const createTreatmentPlan = mutation({
     const gameData: ConservationGameData = JSON.parse(session.gameData);
 
     // Validate process order (cleaning -> stabilization -> repair -> preservation)
-    const correctOrder = validateProcessOrder(
+    const orderValidation = validateProcessOrderDetailed(
       args.processOrder,
       gameData.selectedProcesses
     );
+    const correctOrder = orderValidation.isCorrect;
     const planScore = correctOrder ? 30 : 10; // Out of 30 points
 
     // Create treatment steps
@@ -410,20 +434,34 @@ export const createTreatmentPlan = mutation({
       };
     });
 
-    gameData.score += planScore;
+    // Cap score at 100, overflow goes to bonus
+    const newTotal = gameData.score + planScore;
+    if (newTotal > 100) {
+      gameData.bonusPoints += newTotal - 100;
+      gameData.score = 100;
+    } else {
+      gameData.score = newTotal;
+    }
 
     await ctx.db.patch(args.sessionId, {
-      currentScore: session.currentScore + planScore,
+      currentScore: Math.min(100, session.currentScore + planScore),
       completionPercentage: 50,
       gameData: JSON.stringify(gameData),
     });
 
+    let feedback = "";
+    if (correctOrder) {
+      feedback =
+        "Excellent treatment plan! Processes are in the correct order: Cleaning → Stabilization → Repair → Preservation.";
+    } else {
+      feedback = `Treatment plan created, but the order has issues. You earned ${planScore} points instead of 30. ${orderValidation.errors.length > 0 ? "See the errors below for details." : ""}`;
+    }
+
     return {
       score: planScore,
       isCorrectOrder: correctOrder,
-      feedback: correctOrder
-        ? "Excellent treatment plan! Processes are in the correct order."
-        : "Treatment plan created, but the order could be improved.",
+      feedback,
+      orderingErrors: orderValidation.errors,
     };
   },
 });
@@ -464,14 +502,22 @@ export const executeTreatmentStep = mutation({
     gameData.completedSteps.push(args.stepId);
 
     const stepScore = step.isCorrect ? 10 : 5; // Out of 10 points per step
-    gameData.score += stepScore;
+
+    // Cap score at 100, overflow goes to bonus
+    const newTotal = gameData.score + stepScore;
+    if (newTotal > 100) {
+      gameData.bonusPoints += newTotal - 100;
+      gameData.score = 100;
+    } else {
+      gameData.score = newTotal;
+    }
 
     const completionPercentage = Math.round(
       50 + (gameData.completedSteps.length / gameData.treatmentPlan.length) * 50
     );
 
     await ctx.db.patch(args.sessionId, {
-      currentScore: session.currentScore + stepScore,
+      currentScore: Math.min(100, session.currentScore + stepScore),
       completionPercentage,
       gameData: JSON.stringify(gameData),
     });
@@ -575,8 +621,15 @@ export const completeConservationLabGame = mutation({
   }),
   handler: async (ctx, args) => {
     const session = await ctx.db.get(args.sessionId);
-    if (!session || session.status !== "active") {
-      throw new Error("Invalid or inactive game session");
+
+    if (!session) {
+      throw new Error("Game session not found. Please start a new game.");
+    }
+
+    if (session.status !== "active") {
+      throw new Error(
+        `Game session is ${session.status}. Cannot complete an inactive session.`
+      );
     }
 
     const gameData: ConservationGameData = JSON.parse(session.gameData);
@@ -608,81 +661,449 @@ export const completeConservationLabGame = mutation({
 
 // Helper functions
 function generateArtifactCondition(difficulty: string): ArtifactCondition {
-  const beginnerDamages: Damage[] = [
+  // Define possible material types
+  const materialTypes = [
+    "ceramic with metal fittings",
+    "bronze with decorative elements",
+    "iron with wooden handle remnants",
+    "stone with carved details",
+    "glass with metal frame",
+    "composite ceramic and stone",
+    "copper alloy with inlay",
+    "terracotta with painted surface",
+  ];
+
+  // Define possible damage types with descriptions
+  const damagePool = [
     {
-      id: "damage_1",
-      type: "encrustation",
-      severity: "moderate",
-      location: "surface",
-      description: "Marine growth and calcium deposits covering the surface",
+      type: "encrustation" as const,
+      locations: ["surface", "crevices", "decorative elements", "base"],
+      descriptions: [
+        "Marine growth and calcium deposits covering the surface",
+        "Thick layers of barnacles and shell fragments",
+        "Coral encrustation obscuring original features",
+        "Mineral deposits from sediment burial",
+      ],
     },
     {
-      id: "damage_2",
-      type: "corrosion",
-      severity: "minor",
-      location: "edges",
-      description: "Light oxidation on metal components",
+      type: "corrosion" as const,
+      locations: ["edges", "joints", "metal components", "fasteners"],
+      descriptions: [
+        "Light oxidation on metal components",
+        "Active corrosion with green patina formation",
+        "Severe rust compromising structural integrity",
+        "Galvanic corrosion at metal junctions",
+      ],
+    },
+    {
+      type: "fracture" as const,
+      locations: ["body", "rim", "handle", "base"],
+      descriptions: [
+        "Clean break through the main body",
+        "Multiple stress fractures radiating from impact point",
+        "Hairline cracks throughout the structure",
+        "Complete separation of major components",
+      ],
+    },
+    {
+      type: "biological" as const,
+      locations: ["interior", "porous areas", "organic materials", "surface"],
+      descriptions: [
+        "Fungal growth in porous areas",
+        "Bacterial degradation of organic components",
+        "Algae staining on exposed surfaces",
+        "Insect damage to wooden elements",
+      ],
+    },
+    {
+      type: "deterioration" as const,
+      locations: ["surface", "edges", "thin sections", "decorative details"],
+      descriptions: [
+        "Surface flaking and material loss",
+        "Powdering and friability of the material",
+        "Delamination of surface layers",
+        "Erosion from water movement",
+      ],
     },
   ];
 
+  // Define environmental factors
+  const environmentalFactorPool = [
+    "saltwater exposure",
+    "marine organisms",
+    "sediment burial",
+    "tidal action",
+    "anaerobic conditions",
+    "shifting currents",
+    "temperature fluctuations",
+    "pressure from overlying sediment",
+    "chemical reactions with seawater",
+    "biological activity",
+  ];
+
+  // Define age estimates
+  const ageEstimates = [
+    "500-1000 years",
+    "1000-1500 years",
+    "1500-2000 years",
+    "2000-2500 years",
+    "2500-3000 years",
+    "3000-4000 years",
+  ];
+
+  // Generate damages based on difficulty
+  const damages: Damage[] = [];
+  let numDamages: number;
+  let severityWeights: { minor: number; moderate: number; severe: number };
+
+  if (difficulty === "beginner") {
+    numDamages = 2 + Math.floor(Math.random() * 2); // 2-3 damages
+    severityWeights = { minor: 0.5, moderate: 0.4, severe: 0.1 };
+  } else if (difficulty === "intermediate") {
+    numDamages = 3 + Math.floor(Math.random() * 2); // 3-4 damages
+    severityWeights = { minor: 0.3, moderate: 0.5, severe: 0.2 };
+  } else {
+    // advanced
+    numDamages = 4 + Math.floor(Math.random() * 2); // 4-5 damages
+    severityWeights = { minor: 0.2, moderate: 0.4, severe: 0.4 };
+  }
+
+  // Randomly select damage types (no duplicates)
+  const shuffledDamagePool = [...damagePool].sort(() => Math.random() - 0.5);
+  const selectedDamageTypes = shuffledDamagePool.slice(0, numDamages);
+
+  selectedDamageTypes.forEach((damageType, index) => {
+    const rand = Math.random();
+    let severity: "minor" | "moderate" | "severe";
+
+    if (rand < severityWeights.minor) {
+      severity = "minor";
+    } else if (rand < severityWeights.minor + severityWeights.moderate) {
+      severity = "moderate";
+    } else {
+      severity = "severe";
+    }
+
+    const location =
+      damageType.locations[
+        Math.floor(Math.random() * damageType.locations.length)
+      ];
+    const description =
+      damageType.descriptions[
+        Math.floor(Math.random() * damageType.descriptions.length)
+      ];
+
+    damages.push({
+      id: `damage_${index + 1}`,
+      type: damageType.type,
+      severity,
+      location,
+      description,
+    });
+  });
+
+  // Randomly select environmental factors
+  const numFactors = 3 + Math.floor(Math.random() * 3); // 3-5 factors
+  const shuffledFactors = [...environmentalFactorPool].sort(
+    () => Math.random() - 0.5
+  );
+  const environmentalFactors = shuffledFactors.slice(0, numFactors);
+
+  // Randomly select material type and age
+  const materialType =
+    materialTypes[Math.floor(Math.random() * materialTypes.length)];
+  const ageEstimate =
+    ageEstimates[Math.floor(Math.random() * ageEstimates.length)];
+
+  // Determine overall condition based on severity distribution
+  let overallCondition: "excellent" | "good" | "fair" | "poor";
+  const severeCount = damages.filter((d) => d.severity === "severe").length;
+  const moderateCount = damages.filter((d) => d.severity === "moderate").length;
+
+  if (severeCount >= 2) {
+    overallCondition = "poor";
+  } else if (severeCount === 1 || moderateCount >= 3) {
+    overallCondition = "fair";
+  } else if (moderateCount >= 1) {
+    overallCondition = "good";
+  } else {
+    overallCondition = "excellent";
+  }
+
   return {
-    overallCondition: "fair",
-    damages: beginnerDamages,
-    environmentalFactors: [
-      "saltwater exposure",
-      "marine organisms",
-      "sediment burial",
-    ],
-    materialType: "ceramic with metal fittings",
-    ageEstimate: "2000-2500 years",
+    overallCondition,
+    damages,
+    environmentalFactors,
+    materialType,
+    ageEstimate,
   };
 }
 
 function getAvailableProcesses(
   condition: ArtifactCondition
 ): ConservationProcess[] {
-  return [
-    {
-      id: "process_1",
-      name: "Gentle Cleaning",
-      category: "cleaning",
-      description: "Remove loose sediment and marine growth with soft brushes",
-      duration: 2,
-      isAppropriate: true,
-    },
-    {
-      id: "process_2",
-      name: "Chemical Bath",
-      category: "cleaning",
-      description: "Soak in specialized cleaning solution",
-      duration: 4,
-      isAppropriate: condition.materialType.includes("ceramic"),
-    },
-    {
-      id: "process_3",
-      name: "Consolidation",
-      category: "stabilization",
-      description: "Apply consolidant to strengthen fragile areas",
-      duration: 3,
-      isAppropriate: true,
-    },
-    {
-      id: "process_4",
-      name: "Adhesive Repair",
-      category: "repair",
-      description: "Rejoin broken fragments with conservation-grade adhesive",
-      duration: 2,
-      isAppropriate: condition.damages.some((d) => d.type === "fracture"),
-    },
-    {
-      id: "process_5",
-      name: "Protective Coating",
-      category: "preservation",
-      description: "Apply protective coating to prevent future deterioration",
-      duration: 1,
-      isAppropriate: true,
-    },
-  ];
+  const hasFractures = condition.damages.some((d) => d.type === "fracture");
+  const hasCorrosion = condition.damages.some((d) => d.type === "corrosion");
+  const hasEncrustation = condition.damages.some(
+    (d) => d.type === "encrustation"
+  );
+  const hasBiological = condition.damages.some((d) => d.type === "biological");
+  const hasDeterioration = condition.damages.some(
+    (d) => d.type === "deterioration"
+  );
+
+  const isCeramic =
+    condition.materialType.includes("ceramic") ||
+    condition.materialType.includes("terracotta");
+  const isMetal =
+    condition.materialType.includes("metal") ||
+    condition.materialType.includes("bronze") ||
+    condition.materialType.includes("iron") ||
+    condition.materialType.includes("copper");
+  const isStone = condition.materialType.includes("stone");
+  const hasOrganic = condition.materialType.includes("wooden");
+
+  const processes: ConservationProcess[] = [];
+
+  // CLEANING PROCESSES
+  processes.push({
+    id: "process_gentle_cleaning",
+    name: "Gentle Cleaning",
+    category: "cleaning",
+    description: "Remove loose sediment and marine growth with soft brushes",
+    duration: 2,
+    isAppropriate: true, // Always appropriate as first step
+  });
+
+  processes.push({
+    id: "process_chemical_bath",
+    name: "Chemical Bath",
+    category: "cleaning",
+    description: "Soak in specialized cleaning solution",
+    duration: 4,
+    isAppropriate: isCeramic || isStone,
+  });
+
+  processes.push({
+    id: "process_mechanical_cleaning",
+    name: "Mechanical Cleaning",
+    category: "cleaning",
+    description: "Use precision tools to remove stubborn encrustations",
+    duration: 3,
+    isAppropriate: hasEncrustation && (isMetal || isStone),
+  });
+
+  processes.push({
+    id: "process_ultrasonic_cleaning",
+    name: "Ultrasonic Cleaning",
+    category: "cleaning",
+    description: "Use ultrasonic waves to remove deposits",
+    duration: 2,
+    isAppropriate: isMetal && !hasFractures,
+  });
+
+  processes.push({
+    id: "process_biocide_treatment",
+    name: "Biocide Treatment",
+    category: "cleaning",
+    description: "Apply biocide to eliminate biological growth",
+    duration: 3,
+    isAppropriate: hasBiological,
+  });
+
+  // DISTRACTOR CLEANING PROCESSES (inappropriate methods)
+  processes.push({
+    id: "process_power_washing",
+    name: "Power Washing",
+    category: "cleaning",
+    description: "Use high-pressure water to quickly remove debris",
+    duration: 1,
+    isAppropriate: false, // Too aggressive - can damage artifacts
+  });
+
+  processes.push({
+    id: "process_wire_brush",
+    name: "Wire Brush Scrubbing",
+    category: "cleaning",
+    description: "Scrub surface with metal wire brush for thorough cleaning",
+    duration: 1,
+    isAppropriate: false, // Too abrasive - can scratch and damage surface
+  });
+
+  processes.push({
+    id: "process_bleach_soak",
+    name: "Household Bleach Soak",
+    category: "cleaning",
+    description: "Soak in bleach solution to remove stains and discoloration",
+    duration: 2,
+    isAppropriate: false, // Harsh chemicals can damage artifacts
+  });
+
+  processes.push({
+    id: "process_dishwasher",
+    name: "Dishwasher Cleaning",
+    category: "cleaning",
+    description: "Run through dishwasher cycle for efficient cleaning",
+    duration: 1,
+    isAppropriate: false, // Heat and detergents can cause irreversible damage
+  });
+
+  processes.push({
+    id: "process_sandblasting",
+    name: "Sandblasting",
+    category: "cleaning",
+    description: "Use abrasive particles to blast away encrustation",
+    duration: 2,
+    isAppropriate: false, // Extremely destructive to artifact surfaces
+  });
+
+  // STABILIZATION PROCESSES
+  processes.push({
+    id: "process_consolidation",
+    name: "Consolidation",
+    category: "stabilization",
+    description: "Apply consolidant to strengthen fragile areas",
+    duration: 3,
+    isAppropriate: hasDeterioration || condition.overallCondition === "poor",
+  });
+
+  processes.push({
+    id: "process_desalination",
+    name: "Desalination",
+    category: "stabilization",
+    description: "Remove harmful salts through controlled soaking",
+    duration: 5,
+    isAppropriate: isCeramic || hasOrganic,
+  });
+
+  processes.push({
+    id: "process_corrosion_inhibitor",
+    name: "Corrosion Inhibitor",
+    category: "stabilization",
+    description: "Apply corrosion inhibitor to metal surfaces",
+    duration: 2,
+    isAppropriate: hasCorrosion && isMetal,
+  });
+
+  processes.push({
+    id: "process_freeze_drying",
+    name: "Freeze Drying",
+    category: "stabilization",
+    description: "Remove water through freeze-drying process",
+    duration: 8,
+    isAppropriate: hasOrganic,
+  });
+
+  // REPAIR PROCESSES
+  processes.push({
+    id: "process_adhesive_repair",
+    name: "Adhesive Repair",
+    category: "repair",
+    description: "Rejoin broken fragments with conservation-grade adhesive",
+    duration: 2,
+    isAppropriate: hasFractures,
+  });
+
+  processes.push({
+    id: "process_gap_filling",
+    name: "Gap Filling",
+    category: "repair",
+    description: "Fill losses with reversible conservation materials",
+    duration: 3,
+    isAppropriate: hasFractures || hasDeterioration,
+  });
+
+  processes.push({
+    id: "process_structural_support",
+    name: "Structural Support",
+    category: "repair",
+    description: "Add internal support to weak areas",
+    duration: 4,
+    isAppropriate:
+      hasFractures && condition.damages.some((d) => d.severity === "severe"),
+  });
+
+  // DISTRACTOR REPAIR PROCESSES (inappropriate methods)
+  processes.push({
+    id: "process_super_glue",
+    name: "Super Glue Repair",
+    category: "repair",
+    description: "Use fast-drying super glue to quickly fix breaks",
+    duration: 1,
+    isAppropriate: false, // Not reversible - violates conservation principles
+  });
+
+  processes.push({
+    id: "process_duct_tape",
+    name: "Duct Tape Reinforcement",
+    category: "repair",
+    description: "Wrap broken areas with duct tape for quick stabilization",
+    duration: 1,
+    isAppropriate: false, // Adhesive residue damages artifacts permanently
+  });
+
+  // PRESERVATION PROCESSES
+  processes.push({
+    id: "process_protective_coating",
+    name: "Protective Coating",
+    category: "preservation",
+    description: "Apply protective coating to prevent future deterioration",
+    duration: 1,
+    isAppropriate: true, // Always appropriate as final step
+  });
+
+  processes.push({
+    id: "process_wax_coating",
+    name: "Wax Coating",
+    category: "preservation",
+    description: "Apply microcrystalline wax for protection",
+    duration: 2,
+    isAppropriate: isMetal,
+  });
+
+  processes.push({
+    id: "process_humidity_control",
+    name: "Humidity Control Storage",
+    category: "preservation",
+    description: "Store in controlled humidity environment",
+    duration: 1,
+    isAppropriate: hasOrganic || isMetal,
+  });
+
+  // DISTRACTOR PRESERVATION PROCESSES (inappropriate methods)
+  processes.push({
+    id: "process_nail_polish",
+    name: "Clear Nail Polish Coating",
+    category: "preservation",
+    description: "Apply clear nail polish as a protective sealant",
+    duration: 1,
+    isAppropriate: false, // Not archival quality - can yellow and damage artifacts
+  });
+
+  processes.push({
+    id: "process_spray_paint",
+    name: "Clear Spray Paint Sealant",
+    category: "preservation",
+    description: "Spray with clear acrylic paint for protection",
+    duration: 1,
+    isAppropriate: false, // Not reversible and can obscure original surface
+  });
+
+  processes.push({
+    id: "process_varnish",
+    name: "Wood Varnish Coating",
+    category: "preservation",
+    description: "Apply wood varnish for a glossy protective finish",
+    duration: 2,
+    isAppropriate: false, // Inappropriate for archaeological artifacts - not reversible
+  });
+
+  // Shuffle and return a subset to add variety
+  const shuffled = processes.sort(() => Math.random() - 0.5);
+
+  // Return 8-12 processes
+  const numProcesses = 8 + Math.floor(Math.random() * 5);
+  return shuffled.slice(0, numProcesses);
 }
 
 function validateProcessOrder(
@@ -707,4 +1128,59 @@ function validateProcessOrder(
   }
 
   return true;
+}
+
+function validateProcessOrderDetailed(
+  order: string[],
+  processes: ConservationProcess[]
+): {
+  isCorrect: boolean;
+  errors: Array<{ processName: string; issue: string }>;
+} {
+  const errors: Array<{ processName: string; issue: string }> = [];
+
+  // Map process IDs to their details
+  const processMap = new Map(processes.map((p) => [p.id, p]));
+
+  // Correct order: cleaning -> stabilization -> repair -> preservation
+  const categoryOrder = ["cleaning", "stabilization", "repair", "preservation"];
+  const categoryNames = {
+    cleaning: "Cleaning",
+    stabilization: "Stabilization",
+    repair: "Repair",
+    preservation: "Preservation",
+  };
+
+  let lastCategoryIndex = -1;
+
+  for (let i = 0; i < order.length; i++) {
+    const processId = order[i];
+    const process = processMap.get(processId);
+
+    if (!process) {
+      continue;
+    }
+
+    const currentCategoryIndex = categoryOrder.indexOf(process.category);
+
+    if (currentCategoryIndex < lastCategoryIndex) {
+      // Found an out-of-order process
+      const expectedCategory = categoryOrder[
+        lastCategoryIndex
+      ] as keyof typeof categoryNames;
+      const actualCategory = process.category as keyof typeof categoryNames;
+
+      errors.push({
+        processName: process.name,
+        issue: `${categoryNames[actualCategory]} process should come before ${categoryNames[expectedCategory]} processes. Conservation follows this order: Cleaning → Stabilization → Repair → Preservation.`,
+      });
+    }
+
+    lastCategoryIndex = Math.max(lastCategoryIndex, currentCategoryIndex);
+  }
+
+  return {
+    isCorrect: errors.length === 0,
+    errors,
+  };
 }

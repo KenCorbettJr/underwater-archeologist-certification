@@ -18,6 +18,7 @@ function ConservationLabGameContent() {
   const [activeTab, setActiveTab] = useState<
     "assessment" | "processes" | "treatment"
   >("assessment");
+  const [isCompleting, setIsCompleting] = useState(false);
 
   const startGame = useMutation(
     api.conservationLabGame.startConservationLabGame
@@ -130,7 +131,17 @@ function ConservationLabGameContent() {
     if (!sessionId) return;
     try {
       const result = await createPlan({ sessionId, processOrder });
-      alert(`Plan Score: ${result.score}\n${result.feedback}`);
+
+      let message = `Plan Score: ${result.score}/30 points\n\n${result.feedback}`;
+
+      if (result.orderingErrors && result.orderingErrors.length > 0) {
+        message += "\n\n❌ Ordering Issues:\n";
+        result.orderingErrors.forEach((error, index) => {
+          message += `\n${index + 1}. ${error.processName}: ${error.issue}`;
+        });
+      }
+
+      alert(message);
       setActiveTab("treatment");
     } catch (error) {
       console.error("Failed to create plan:", error);
@@ -148,16 +159,46 @@ function ConservationLabGameContent() {
   };
 
   const handleCompleteGame = async () => {
-    if (!sessionId) return;
+    if (isCompleting) {
+      return; // Prevent double-clicking
+    }
+
+    if (!sessionId) {
+      alert("❌ Error: No active game session found. Please start a new game.");
+      return;
+    }
+    if (!gameState) {
+      alert("❌ Error: Game state not loaded. Please refresh the page.");
+      return;
+    }
+
+    setIsCompleting(true);
     try {
       const result = await completeGame({ sessionId });
+      const gameData = JSON.parse(gameState.gameData);
+      const bonusPoints = gameData.bonusPoints || 0;
+
       // 70% minimum for conservation lab (site documentation requirement)
       const passed = result.finalScore >= 70;
-      alert(
-        `${passed ? "🏆" : "😢"} ${result.feedback}\nFinal Score: ${result.finalScore}/100${!passed ? "\nKeep practicing to improve your score!" : ""}`
-      );
+
+      let message = `${passed ? "🏆" : "😢"} ${result.feedback}\nFinal Score: ${result.finalScore}/100`;
+      if (bonusPoints > 0) {
+        message += `\n⭐ Bonus Points: +${bonusPoints}`;
+      }
+      if (!passed) {
+        message += "\nKeep practicing to improve your score!";
+      }
+
+      alert(message);
     } catch (error) {
       console.error("Failed to complete game:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
+      alert(
+        `❌ Error completing game: ${errorMessage}\n\nPlease try refreshing the page or starting a new game.`
+      );
+    } finally {
+      setIsCompleting(false);
     }
   };
 
@@ -279,8 +320,13 @@ function ConservationLabGameContent() {
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold text-sand-400">
-                {gameState.session.currentScore} pts
+                {gameState.session.currentScore}/100
               </div>
+              {gameData.bonusPoints > 0 && (
+                <div className="text-yellow-400 text-sm font-semibold">
+                  +{gameData.bonusPoints} bonus
+                </div>
+              )}
               <div className="text-white/60 text-sm">
                 {gameState.session.completionPercentage}% Complete
               </div>
@@ -440,9 +486,10 @@ function ConservationLabGameContent() {
               gameData.treatmentPlan.length > 0 && (
                 <Button
                   onClick={handleCompleteGame}
-                  className="w-full bg-sand-400 hover:bg-sand-500 text-sand-900 text-lg py-6"
+                  disabled={isCompleting}
+                  className="w-full bg-sand-400 hover:bg-sand-500 text-sand-900 text-lg py-6 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Complete Conservation
+                  {isCompleting ? "Completing..." : "Complete Conservation"}
                 </Button>
               )}
 

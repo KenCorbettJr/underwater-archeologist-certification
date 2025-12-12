@@ -86,6 +86,8 @@ module.exports = {
         "school-swim": "school-swim 15s linear infinite",
         "gradient-shift": "gradient-shift 3s ease infinite",
         "slide-in-right": "slide-in-right 0.3s ease-out",
+        "float-germ": "float-germ 3s ease-in-out infinite",
+        "grow-shrink": "grow-shrink 2.5s ease-in-out infinite",
       },
       keyframes: {
         wave: {
@@ -138,6 +140,28 @@ module.exports = {
         "slide-in-right": {
           "0%": { transform: "translateX(100%)", opacity: "0" },
           "100%": { transform: "translateX(0)", opacity: "1" },
+        },
+        "float-germ": {
+          "0%, 100%": {
+            transform: "translate(0, 0) rotate(0deg)",
+            opacity: "0.8",
+          },
+          "25%": {
+            transform: "translate(5px, -8px) rotate(90deg)",
+            opacity: "1",
+          },
+          "50%": {
+            transform: "translate(-3px, -15px) rotate(180deg)",
+            opacity: "0.9",
+          },
+          "75%": {
+            transform: "translate(-8px, -8px) rotate(270deg)",
+            opacity: "1",
+          },
+        },
+        "grow-shrink": {
+          "0%, 100%": { transform: "scale(1) rotate(0deg)", opacity: "0.7" },
+          "50%": { transform: "scale(1.3) rotate(10deg)", opacity: "1" },
         },
       },
     },

@@ -103,6 +103,29 @@ export function TreatmentPlanner({
     }
   };
 
+  // Check if a process is out of order
+  const isProcessOutOfOrder = (index: number): boolean => {
+    if (index === 0) return false;
+
+    const categoryOrder = [
+      "cleaning",
+      "stabilization",
+      "repair",
+      "preservation",
+    ];
+    const currentProcess = orderedProcesses[index];
+    const previousProcess = orderedProcesses[index - 1];
+
+    if (!currentProcess || !previousProcess) return false;
+
+    const currentCategoryIndex = categoryOrder.indexOf(currentProcess.category);
+    const previousCategoryIndex = categoryOrder.indexOf(
+      previousProcess.category
+    );
+
+    return currentCategoryIndex < previousCategoryIndex;
+  };
+
   if (planCreated && treatmentPlan.length > 0) {
     const completedSteps = treatmentPlan.filter((s) => s.isComplete).length;
     const totalSteps = treatmentPlan.length;
@@ -366,7 +389,11 @@ export function TreatmentPlanner({
                 <div
                   draggable
                   onDragStart={() => handleDragStart(process.id)}
-                  className="flex items-center gap-3 p-3 bg-white/20 rounded-lg cursor-move hover:bg-white/30 transition-all"
+                  className={`flex items-center gap-3 p-3 rounded-lg cursor-move hover:bg-white/30 transition-all border-2 ${
+                    isProcessOutOfOrder(index)
+                      ? "bg-red-500/20 border-red-400"
+                      : "bg-white/20 border-white/30"
+                  }`}
                 >
                   <div className="w-8 h-8 rounded-full bg-sand-400 flex items-center justify-center text-sand-900 font-bold text-sm">
                     {index + 1}
@@ -375,9 +402,16 @@ export function TreatmentPlanner({
                     {getCategoryIcon(process.category)}
                   </span>
                   <div className="flex-1">
-                    <h4 className="text-white font-semibold text-sm">
-                      {process.name}
-                    </h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-white font-semibold text-sm">
+                        {process.name}
+                      </h4>
+                      {isProcessOutOfOrder(index) && (
+                        <span className="text-red-400 text-xs">
+                          ⚠️ Out of order
+                        </span>
+                      )}
+                    </div>
                     <p className="text-white/60 text-xs capitalize">
                       {process.category}
                     </p>

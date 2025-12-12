@@ -131,58 +131,209 @@ export function ConservationWorkbench({
                 {/* Main artifact image with realistic styling */}
                 {artifactImage ? (
                   <div className="relative">
-                    <img
-                      src={artifactImage}
-                      alt={artifactName}
-                      className="max-w-md max-h-[350px] object-contain rounded-lg"
-                      style={{
-                        filter: assessmentComplete
-                          ? "brightness(1.1) contrast(1.05)"
-                          : "brightness(0.7) contrast(0.9) saturate(0.6)",
-                      }}
-                    />
+                    {/* Check if artifactImage is an emoji (single character or short string) or a URL */}
+                    {artifactImage.length <= 4 ? (
+                      // Display as emoji
+                      <div className="text-center">
+                        <div
+                          className="text-[200px] leading-none mb-4"
+                          style={{
+                            filter: assessmentComplete
+                              ? "brightness(1.1) contrast(1.05)"
+                              : "brightness(0.7) contrast(0.9) saturate(0.6)",
+                          }}
+                        >
+                          {artifactImage}
+                        </div>
+                      </div>
+                    ) : (
+                      // Display as image URL
+                      <img
+                        src={artifactImage}
+                        alt={artifactName}
+                        className="max-w-md max-h-[350px] object-contain rounded-lg"
+                        style={{
+                          filter: assessmentComplete
+                            ? "brightness(1.1) contrast(1.05)"
+                            : "brightness(0.7) contrast(0.9) saturate(0.6)",
+                        }}
+                      />
+                    )}
                     {/* Damage overlays - only show before assessment */}
                     {!assessmentComplete && (
                       <>
-                        {/* Encrustation overlay */}
-                        {condition.damages.some(
-                          (d) => d.type === "encrustation"
-                        ) && (
-                          <div
-                            className="absolute inset-0 pointer-events-none"
-                            style={{
-                              background:
-                                "radial-gradient(circle at 30% 40%, rgba(139, 115, 85, 0.6) 0%, transparent 40%), radial-gradient(circle at 70% 60%, rgba(101, 84, 63, 0.5) 0%, transparent 35%)",
-                              mixBlendMode: "multiply",
-                            }}
-                          />
-                        )}
-                        {/* Corrosion overlay */}
+                        {/* Corrosion with animated germs */}
                         {condition.damages.some(
                           (d) => d.type === "corrosion"
                         ) && (
-                          <div
-                            className="absolute inset-0 pointer-events-none"
-                            style={{
-                              background:
-                                "radial-gradient(circle at 20% 70%, rgba(120, 81, 45, 0.5) 0%, transparent 30%), radial-gradient(circle at 80% 30%, rgba(139, 90, 43, 0.4) 0%, transparent 25%)",
-                              mixBlendMode: "overlay",
-                            }}
-                          />
+                          <>
+                            <div
+                              className="absolute inset-0 pointer-events-none"
+                              style={{
+                                background:
+                                  "radial-gradient(circle at 20% 70%, rgba(120, 81, 45, 0.5) 0%, transparent 30%), radial-gradient(circle at 80% 30%, rgba(139, 90, 43, 0.4) 0%, transparent 25%)",
+                                mixBlendMode: "overlay",
+                              }}
+                            />
+                            {/* Animated germs */}
+                            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                              {[...Array(8)].map((_, i) => (
+                                <div
+                                  key={i}
+                                  className="absolute text-2xl animate-float-germ"
+                                  style={{
+                                    left: `${15 + i * 12}%`,
+                                    top: `${20 + (i % 3) * 25}%`,
+                                    animationDelay: `${i * 0.3}s`,
+                                    animationDuration: `${2 + (i % 3) * 0.5}s`,
+                                  }}
+                                >
+                                  🦠
+                                </div>
+                              ))}
+                            </div>
+                          </>
                         )}
-                        {/* Biological growth overlay */}
+
+                        {/* Fracture with crack lines */}
+                        {condition.damages.some(
+                          (d) => d.type === "fracture"
+                        ) && (
+                          <div className="absolute inset-0 pointer-events-none">
+                            {/* Crack lines */}
+                            <svg
+                              className="absolute inset-0 w-full h-full"
+                              style={{ mixBlendMode: "multiply" }}
+                            >
+                              <path
+                                d="M 30% 10% Q 35% 30%, 40% 50% T 45% 90%"
+                                stroke="rgba(0,0,0,0.6)"
+                                strokeWidth="2"
+                                fill="none"
+                                className="animate-pulse"
+                              />
+                              <path
+                                d="M 40% 50% L 60% 55% L 70% 60%"
+                                stroke="rgba(0,0,0,0.5)"
+                                strokeWidth="1.5"
+                                fill="none"
+                                className="animate-pulse"
+                                style={{ animationDelay: "0.5s" }}
+                              />
+                            </svg>
+                            {/* Crack indicators */}
+                            <div className="absolute top-[30%] left-[35%] text-3xl animate-pulse">
+                              💔
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Encrustation with barnacles */}
+                        {condition.damages.some(
+                          (d) => d.type === "encrustation"
+                        ) && (
+                          <>
+                            <div
+                              className="absolute inset-0 pointer-events-none"
+                              style={{
+                                background:
+                                  "radial-gradient(circle at 30% 40%, rgba(139, 115, 85, 0.6) 0%, transparent 40%), radial-gradient(circle at 70% 60%, rgba(101, 84, 63, 0.5) 0%, transparent 35%)",
+                                mixBlendMode: "multiply",
+                              }}
+                            />
+                            {/* Barnacle clusters */}
+                            <div className="absolute inset-0 pointer-events-none">
+                              {[
+                                { x: 25, y: 35 },
+                                { x: 30, y: 42 },
+                                { x: 65, y: 55 },
+                                { x: 70, y: 62 },
+                                { x: 45, y: 70 },
+                              ].map((pos, i) => (
+                                <div
+                                  key={i}
+                                  className="absolute text-2xl animate-bounce"
+                                  style={{
+                                    left: `${pos.x}%`,
+                                    top: `${pos.y}%`,
+                                    animationDelay: `${i * 0.2}s`,
+                                    animationDuration: "2s",
+                                  }}
+                                >
+                                  🪨
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
+
+                        {/* Biological growth with moving organisms */}
                         {condition.damages.some(
                           (d) => d.type === "biological"
                         ) && (
-                          <div
-                            className="absolute inset-0 pointer-events-none"
-                            style={{
-                              background:
-                                "radial-gradient(circle at 50% 80%, rgba(34, 139, 34, 0.4) 0%, transparent 40%), radial-gradient(circle at 40% 20%, rgba(46, 125, 50, 0.3) 0%, transparent 30%)",
-                              mixBlendMode: "darken",
-                            }}
-                          />
+                          <>
+                            <div
+                              className="absolute inset-0 pointer-events-none"
+                              style={{
+                                background:
+                                  "radial-gradient(circle at 50% 80%, rgba(34, 139, 34, 0.4) 0%, transparent 40%), radial-gradient(circle at 40% 20%, rgba(46, 125, 50, 0.3) 0%, transparent 30%)",
+                                mixBlendMode: "darken",
+                              }}
+                            />
+                            {/* Growing organisms */}
+                            <div className="absolute inset-0 pointer-events-none">
+                              {[...Array(6)].map((_, i) => (
+                                <div
+                                  key={i}
+                                  className="absolute text-xl animate-grow-shrink"
+                                  style={{
+                                    left: `${35 + i * 8}%`,
+                                    top: `${60 + (i % 2) * 15}%`,
+                                    animationDelay: `${i * 0.4}s`,
+                                  }}
+                                >
+                                  🌿
+                                </div>
+                              ))}
+                            </div>
+                          </>
                         )}
+
+                        {/* Deterioration with warning signs */}
+                        {condition.damages.some(
+                          (d) => d.type === "deterioration"
+                        ) && (
+                          <div className="absolute inset-0 pointer-events-none">
+                            {/* Fading/crumbling effect */}
+                            <div
+                              className="absolute inset-0"
+                              style={{
+                                background:
+                                  "radial-gradient(circle at 50% 50%, transparent 30%, rgba(139, 69, 19, 0.3) 70%)",
+                                mixBlendMode: "multiply",
+                              }}
+                            />
+                            {/* Warning indicators */}
+                            {[
+                              { x: 20, y: 25 },
+                              { x: 75, y: 40 },
+                              { x: 50, y: 75 },
+                            ].map((pos, i) => (
+                              <div
+                                key={i}
+                                className="absolute text-2xl animate-pulse"
+                                style={{
+                                  left: `${pos.x}%`,
+                                  top: `${pos.y}%`,
+                                  animationDelay: `${i * 0.3}s`,
+                                }}
+                              >
+                                ⚠️
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
                         {/* Dirt and sediment overlay */}
                         <div
                           className="absolute inset-0 pointer-events-none"
