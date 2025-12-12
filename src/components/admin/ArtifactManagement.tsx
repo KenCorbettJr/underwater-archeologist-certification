@@ -48,9 +48,10 @@ export function ArtifactManagement() {
       await createArtifact({
         adminClerkId: adminAuth.user.id,
         ...data,
-        imageStorageId: data.imageStorageId
-          ? (data.imageStorageId as Id<"_storage">)
-          : undefined,
+        imageStorageId:
+          data.imageStorageId && data.imageStorageId.trim()
+            ? (data.imageStorageId as Id<"_storage">)
+            : undefined,
       });
       setShowCreateForm(false);
     } catch (error) {
@@ -62,18 +63,30 @@ export function ArtifactManagement() {
   const handleUpdateArtifact = async (data: ArtifactFormData) => {
     if (!adminAuth.user || !editingArtifact) return;
 
+    // Prepare the update data, filtering out undefined/empty values
+    const updateData: any = {
+      adminClerkId: adminAuth.user.id,
+      artifactId: editingArtifact,
+    };
+
+    // Only include fields that have values
+    Object.entries(data).forEach(([key, value]) => {
+      if (key === "imageStorageId") {
+        if (value && value.trim()) {
+          updateData.imageStorageId = value as Id<"_storage">;
+        }
+      } else if (value !== undefined && value !== null && value !== "") {
+        updateData[key] = value;
+      }
+    });
+
     try {
-      await updateArtifact({
-        adminClerkId: adminAuth.user.id,
-        artifactId: editingArtifact,
-        ...data,
-        imageStorageId: data.imageStorageId
-          ? (data.imageStorageId as Id<"_storage">)
-          : undefined,
-      });
+      console.log("Updating artifact with data:", updateData);
+      await updateArtifact(updateData);
       setEditingArtifact(null);
     } catch (error) {
       console.error("Failed to update artifact:", error);
+      console.error("Update data was:", updateData);
       throw error;
     }
   };

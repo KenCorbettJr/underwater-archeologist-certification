@@ -129,56 +129,72 @@ export const updateArtifact = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    // Validate admin role
-    await validateAdminRole(ctx, args.adminClerkId);
+    try {
+      // Validate admin role
+      await validateAdminRole(ctx, args.adminClerkId);
 
-    const { adminClerkId, artifactId, ...updates } = args;
+      const { adminClerkId, artifactId, ...updates } = args;
 
-    // Check if artifact exists
-    const existingArtifact = await ctx.db.get(artifactId);
-    if (!existingArtifact) {
-      throw new Error("Artifact not found");
-    }
-
-    // Handle image storage update
-    if (updates.imageStorageId) {
-      const imageUrl = await ctx.storage.getUrl(updates.imageStorageId);
-      if (!imageUrl) {
-        throw new Error("Failed to get image URL from storage");
+      // Check if artifact exists
+      const existingArtifact = await ctx.db.get(artifactId);
+      if (!existingArtifact) {
+        throw new Error("Artifact not found");
       }
-      updates.imageUrl = imageUrl;
-    }
 
-    // Validate non-empty strings for required fields
-    const cleanUpdates: any = {};
-    for (const [key, value] of Object.entries(updates)) {
-      if (value !== undefined) {
-        if (typeof value === "string" && key !== "modelUrl") {
-          if (!value.trim()) {
-            throw new Error(`${key} cannot be empty`);
+      // Handle image storage update
+      if (updates.imageStorageId) {
+        const imageUrl = await ctx.storage.getUrl(updates.imageStorageId);
+        if (!imageUrl) {
+          throw new Error("Failed to get image URL from storage");
+        }
+        updates.imageUrl = imageUrl;
+      }
+
+      // Validate and clean updates
+      const cleanUpdates: any = {};
+      for (const [key, value] of Object.entries(updates)) {
+        if (value !== undefined && value !== null) {
+          if (typeof value === "string") {
+            // Allow empty strings for optional fields like modelUrl, dateRange, conservationNotes
+            const optionalFields = [
+              "modelUrl",
+              "dateRange",
+              "conservationNotes",
+            ];
+            if (optionalFields.includes(key)) {
+              cleanUpdates[key] = value.trim();
+            } else {
+              // Required fields must not be empty
+              if (!value.trim()) {
+                throw new Error(`${key} cannot be empty`);
+              }
+              cleanUpdates[key] = value.trim();
+            }
+          } else {
+            cleanUpdates[key] = value;
           }
-          cleanUpdates[key] = value.trim();
-        } else {
-          cleanUpdates[key] = value;
         }
       }
+
+      // Apply updates if any
+      if (Object.keys(cleanUpdates).length > 0) {
+        await ctx.db.patch(artifactId, cleanUpdates);
+      }
+
+      // Log admin action
+      await ctx.runMutation(api.adminAuth.logAdminAction, {
+        adminClerkId,
+        action: "update_artifact",
+        resourceType: "gameArtifacts",
+        resourceId: artifactId as string,
+        details: `Updated artifact: ${existingArtifact.name}`,
+      });
+
+      return null;
+    } catch (error) {
+      console.error("Error in updateArtifact:", error);
+      throw error;
     }
-
-    // Apply updates if any
-    if (Object.keys(cleanUpdates).length > 0) {
-      await ctx.db.patch(artifactId, cleanUpdates);
-    }
-
-    // Log admin action
-    await ctx.runMutation(api.adminAuth.logAdminAction, {
-      adminClerkId,
-      action: "update_artifact",
-      resourceType: "gameArtifacts",
-      resourceId: artifactId as string,
-      details: `Updated artifact: ${existingArtifact.name}`,
-    });
-
-    return null;
   },
 });
 

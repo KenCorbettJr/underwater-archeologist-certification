@@ -9,19 +9,28 @@ export async function validateAdminRole(
   ctx: any,
   adminClerkId: string
 ): Promise<void> {
-  // Check if the user exists in our system
-  const user = await ctx.db
-    .query("users")
-    .withIndex("by_clerk_id", (q: any) => q.eq("clerkId", adminClerkId))
-    .first();
+  try {
+    if (!adminClerkId || typeof adminClerkId !== "string") {
+      throw new Error("Invalid admin Clerk ID provided");
+    }
 
-  if (!user) {
-    throw new Error("User not found in system");
+    // Check if the user exists in our system
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q: any) => q.eq("clerkId", adminClerkId))
+      .first();
+
+    if (!user) {
+      throw new Error(`User with Clerk ID ${adminClerkId} not found in system`);
+    }
+
+    // Note: Admin role validation is handled at the middleware/API layer
+    // by checking Clerk's publicMetadata.role === "admin"
+    // This function assumes the adminClerkId has already been validated
+  } catch (error) {
+    console.error("Error in validateAdminRole:", error);
+    throw error;
   }
-
-  // Note: Admin role validation is handled at the middleware/API layer
-  // by checking Clerk's publicMetadata.role === "admin"
-  // This function assumes the adminClerkId has already been validated
 }
 
 /**
